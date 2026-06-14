@@ -50,7 +50,7 @@ const ChartTooltip = ({ active, payload, label }: any) => {
 };
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
-const StatCard = ({ label, value, sub, icon: Icon, accentColor, iconBg, delay = '0ms' }: any) => (
+const StatCard = ({ label, value, sub, icon: Icon, accentColor, delay = '0ms' }: any) => (
   <div
     className="animate-fade-in"
     style={{

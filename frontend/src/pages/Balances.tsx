@@ -4,7 +4,6 @@ import { useGroup } from '../context/GroupContext';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 import {
-  ArrowRight,
   HandCoins,
   Scale,
   Calendar,
