@@ -42,7 +42,7 @@ app.use(errorHandler);
 
 // --- Start server ---
 app.listen(PORT, () => {
-  console.log(`🚀 EXPensio API running on port ${PORT}`);
+  console.log(`🚀 SpreeTail API running on port ${PORT}`);
   console.log(`📋 Health check: http://localhost:${PORT}/api/health`);
 });
 

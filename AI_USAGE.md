@@ -1,6 +1,6 @@
-# EXPensio — AI Usage Log
+# SpreeTail — AI Usage Log
 
-This document records the AI tools, key prompt templates, and debugging/compilation corrections resolved during the development of the EXPensio shared expenses application.
+This document records the AI tools, key prompt templates, and debugging/compilation corrections resolved during the development of the SpreeTail shared expenses application.
 
 ---
 

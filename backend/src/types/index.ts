@@ -1,5 +1,5 @@
 // ============================================
-// Shared TypeScript types for EXPensio
+// Shared TypeScript types for SpreeTail
 // ============================================
 
 // --- Database Row Types ---

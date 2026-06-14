@@ -1,4 +1,4 @@
-# EXPensio — SCOPE & Anomaly Log
+# SpreeTail — SCOPE & Anomaly Log
 
 This document details:
 1. Every anomaly detected in `expenses_export.csv` and the programmatic policies applied to resolve them.
@@ -23,7 +23,7 @@ Our importer ingests the CSV file exactly as provided. We detected **15 distinct
 | **NEGATIVE_AMOUNT** | **Row 26**: "Parasailing refund" (-30 USD). | **Import as refund split**. The negative split credits the participating members and debits the payer. |
 | **SPLIT_PERCENTAGE_SUM** | **Row 15 & 32**: Pizza and Brunch percentages sum to 110% (30% + 30% + 30% + 20%). | **Proportional normalization**. We scale the percentages proportionally so they sum to exactly 100% (e.g. 27.27%, 27.27%, 27.27%, 18.18%). |
 | **NAME_VARIANT** | **Row 11**: `Priya S` paid.<br>**Row 9**: `priya` (lowercase).<br>**Row 27**: `rohan ` (trailing spaces). | **Fuzzy match**. Trim spaces and perform lowercase comparison. For "Priya S", Levenshtein distance <= 2 is used to resolve the variant to "Priya". |
-| **UNKNOWN_MEMBER** | **Row 5 & 23**: `Dev` and `Dev's friend Kabir` are not in the group. | **Auto-add member, flag for review**. We check if they exist as database users. If not, we create placeholder user accounts (e.g., `kabir.groupid@expensio.com`) and add them to the group. |
+| **UNKNOWN_MEMBER** | **Row 5 & 23**: `Dev` and `Dev's friend Kabir` are not in the group. | **Auto-add member, flag for review**. We check if they exist as database users. If not, we create placeholder user accounts (e.g., `kabir.groupid@spreetail.com`) and add them to the group. |
 | **ZERO_AMOUNT** | **Row 31**: "Dinner order Swiggy" (0 INR). | **Skip row**. We exclude the row from the import list since it has no financial value. |
 | **MISSING_CURRENCY** | **Row 28**: "Groceries DMart" has an empty currency field. | **Default to INR**. The record is normalized to INR. |
 | **AMOUNT_FORMATTING** | **Row 7**: `"1,200"` (quotes and commas).<br>**Row 10**: `899.995` (3 decimals).<br>**Row 29**: ` 1450 ` (spaces). | **Normalize amount string**. Strip commas and quotes, parse as float, and round to 2 decimal places (e.g. 899.995 -> 900.00). |

@@ -1,6 +1,6 @@
-# EXPensio — Shared Expenses Application
+# SpreeTail — Shared Expenses Application
 
-EXPensio is a shared expenses web application built to ingest, resolve, and audit shared flatmate ledger CSV sheets with time-varying group memberships.
+SpreeTail is a shared expenses web application built to ingest, resolve, and audit shared flatmate ledger CSV sheets with time-varying group memberships.
 
 ---
 
@@ -20,13 +20,13 @@ Ensure you have the following installed locally:
 * **PostgreSQL** database server running locally
 
 ### 2. Database Setup
-Create a local database named `expensio` and load the schema:
+Create a local database named `spreetail` and load the schema:
 ```bash
 # Create database
-createdb expensio
+createdb spreetail
 
 # Ingest schema
-psql -d expensio -f backend/src/db/schema.sql
+psql -d spreetail -f backend/src/db/schema.sql
 ```
 
 ### 3. Backend Setup
@@ -38,7 +38,7 @@ npm install
 Create a `.env` file inside `/backend` (see template below):
 ```env
 PORT=3001
-DATABASE_URL=postgresql://localhost:5432/expensio
+DATABASE_URL=postgresql://localhost:5432/spreetail
 JWT_ACCESS_SECRET=your_jwt_access_secret_key_here
 JWT_REFRESH_SECRET=your_jwt_refresh_secret_key_here
 FRONTEND_URL=http://localhost:5173

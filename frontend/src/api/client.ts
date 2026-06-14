@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 /**
- * Axios instance configured for the EXPensio API.
+ * Axios instance configured for the SpreeTail API.
  * - Base URL from environment variable
  * - Credentials enabled for httpOnly refresh token cookies
  * - Request interceptor: attaches access token from localStorage

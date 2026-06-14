@@ -1,6 +1,6 @@
-# EXPensio — Decision Log
+# SpreeTail — Decision Log
 
-This document records the key technical design decisions made during the development of the EXPensio shared expenses application, including alternatives considered and final justifications.
+This document records the key technical design decisions made during the development of the SpreeTail shared expenses application, including alternatives considered and final justifications.
 
 ---
 
@@ -40,6 +40,6 @@ This document records the key technical design decisions made during the develop
 * **Context**: Names like "Dev" or "Kabir" appear in CSV split lists but are not registered users in the group.
 * **Options Considered**:
   1. *Block Ingestion*: Reject the CSV import until the user manually creates accounts.
-  2. *Fuzzy Matching + Auto-Creation*: Fuzzy match variations (e.g. "Priya S" -> "Priya") and automatically create placeholder users (e.g., `kabir.groupid@expensio.com`) for completely new names.
+  2. *Fuzzy Matching + Auto-Creation*: Fuzzy match variations (e.g. "Priya S" -> "Priya") and automatically create placeholder users (e.g., `kabir.groupid@spreetail.com`) for completely new names.
 * **Decision**: **Fuzzy Matching + Auto-Creation**.
 * **Justification**: Ingesting a CSV should be frictionless. Auto-creating placeholder users keeps the import running to completion while ensuring that all balance splits and who-owes-whom cash flows are tracked accurately.

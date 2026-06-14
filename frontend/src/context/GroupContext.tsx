@@ -40,13 +40,13 @@ export function GroupProvider({ children }: { children: React.ReactNode }) {
 
       if (groupList.length > 0) {
         // Recover selected group from localStorage if valid
-        const savedId = localStorage.getItem('expensio_current_group_id');
+        const savedId = localStorage.getItem('spreetail_current_group_id');
         const activeGroup = groupList.find((g: Group) => g.id.toString() === savedId) || groupList[0];
         setCurrentGroupState(activeGroup);
-        localStorage.setItem('expensio_current_group_id', activeGroup.id.toString());
+        localStorage.setItem('spreetail_current_group_id', activeGroup.id.toString());
       } else {
         setCurrentGroupState(null);
-        localStorage.removeItem('expensio_current_group_id');
+        localStorage.removeItem('spreetail_current_group_id');
         
         // If not on onboarding or login/register, redirect to onboarding
         const publicPaths = ['/login', '/register', '/onboarding'];
@@ -64,9 +64,9 @@ export function GroupProvider({ children }: { children: React.ReactNode }) {
   const setCurrentGroup = (group: Group | null) => {
     setCurrentGroupState(group);
     if (group) {
-      localStorage.setItem('expensio_current_group_id', group.id.toString());
+      localStorage.setItem('spreetail_current_group_id', group.id.toString());
     } else {
-      localStorage.removeItem('expensio_current_group_id');
+      localStorage.removeItem('spreetail_current_group_id');
     }
   };
 

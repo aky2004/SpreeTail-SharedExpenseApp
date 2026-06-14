@@ -1,7 +1,7 @@
 {
-  "name": "expensio-backend",
+  "name": "spreetail-backend",
   "version": "1.0.0",
-  "description": "EXPensio shared expenses app - backend API",
+  "description": "SpreeTail shared expenses app - backend API",
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",

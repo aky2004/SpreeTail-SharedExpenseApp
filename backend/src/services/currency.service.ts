@@ -1,5 +1,5 @@
 /**
- * Currency service for EXPensio.
+ * Currency service for SpreeTail.
  *
  * Policy (documented in SCOPE.md):
  * - Non-INR expenses store: amount_original, currency, exchange_rate, amount_inr

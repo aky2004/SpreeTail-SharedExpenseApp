@@ -180,7 +180,7 @@ async function resolveMemberName(
   }
 
   // 5. Create placeholder user (Policy: Auto-create unknown members)
-  const dummyEmail = `${extractedKabir.toLowerCase().replace(/[^a-z0-9]/g, '')}.${groupId}@expensio.com`;
+  const dummyEmail = `${extractedKabir.toLowerCase().replace(/[^a-z0-9]/g, '')}.${groupId}@spreetail.com`;
   const dummyPassHash = '$2b$10$dummyhashplaceholder'; // dummy hash
   const newUserResult = await client.query(
     'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id, name',

@@ -153,7 +153,7 @@ export default function Import() {
     if (!importReport) return;
     
     // Build human readable report content
-    const reportText = `EXPENSIO IMPORT SUMMARY REPORT
+    const reportText = `SPREETAIL IMPORT SUMMARY REPORT
 =====================================
 Import Date: ${new Date().toLocaleString()}
 Import Log ID: ${importReport.importLogId}
@@ -183,7 +183,7 @@ ${importReport.finalRows.map((r: any) =>
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `expensio_import_report_${importReport.importLogId}.txt`);
+    link.setAttribute('download', `spreetail_import_report_${importReport.importLogId}.txt`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

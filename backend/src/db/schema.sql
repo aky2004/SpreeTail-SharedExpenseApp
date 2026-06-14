@@ -1,4 +1,4 @@
--- EXPensio Database Schema
+-- SpreeTail Database Schema
 -- Shared expenses application with time-varying group membership
 
 -- Enable UUID extension (optional, using SERIAL for simplicity and traceability)

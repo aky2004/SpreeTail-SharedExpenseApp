@@ -1,5 +1,5 @@
 // ============================================
-// Shared frontend types for EXPensio
+// Shared frontend types for SpreeTail
 // ============================================
 
 export interface User {
