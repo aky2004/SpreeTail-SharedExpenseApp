@@ -1,182 +1,131 @@
-# SpreeTail — SCOPE & Anomaly Log
+# Application Scope & Data Architecture
 
-This document details:
-1. Every anomaly detected in `expenses_export.csv` and the programmatic policies applied to resolve them.
-2. The complete PostgreSQL database schema design for tracking time-varying memberships, expenses, splits, and settlements.
+This document defines the boundaries of the CSV ingestion anomaly engine, detailing every data discrepancy tracked by the system, the policy utilized to resolve it, and the underlying PostgreSQL database schema that supports the application.
+
+## 1. CSV Ingestion Anomaly Detection Log
+
+The core of SpreeTail's import engine (`import.service.ts`) is designed to handle dirty, real-world data from varied external sources. It parses files iteratively and applies the following resolution policies:
+
+### Date Anomalies
+| Anomaly Type | Detection Logic | Resolution Policy | Post-Action Status |
+|--------------|-----------------|-------------------|--------------------|
+| **Missing Date / Invalid Format** | Regex checking fails to match standard dates (`YYYY-MM-DD`, `DD/MM/YYYY`, `MMM DD`). | Assumes chronological ordering. The engine falls back to the last successfully parsed date in the loop. | Auto-fixed. Logs action: `defaulted_to_previous_date`. |
+| **Ambiguous Date** | Identifies dates like `04/05/2026` where month and day are uncertain. | Inspects the contextual date variables (the surrounding rows) to determine if a DD/MM or MM/DD interpretation prevents massive chronological jumping. | Auto-fixed, but flags for manual review to ensure context assumption was correct. |
+
+### Financial Anomalies
+| Anomaly Type | Detection Logic | Resolution Policy | Post-Action Status |
+|--------------|-----------------|-------------------|--------------------|
+| **Missing/Zero Amount** | Amount parses to `0`, `NaN`, or is blank. | Zero-amount expenses hold no value in a shared ledger and break percentage split math. | Row skipped entirely. |
+| **Amount Formatting** | Amount string contains commas, leading/trailing whitespace, or exceeds 2 decimal precision. | Strips non-numeric characters and enforces strict 2-decimal rounding (`Math.round(val * 100) / 100`). | Auto-fixed. Logs action: `rounded_to_2dp` or `stripped_formatting`. |
+| **Negative Amount** | Parsed numerical amount is `< 0`. | Identifies the entry as a refund or credit rather than an expense. | Converts to absolute (positive) value, tags row as `is_refund`, flags for review. |
+| **Missing Currency** | Currency column is empty. | SpreeTail operates natively on INR. | Auto-fixed. Defaults to `INR`. |
+
+### Member & Identity Anomalies
+| Anomaly Type | Detection Logic | Resolution Policy | Post-Action Status |
+|--------------|-----------------|-------------------|--------------------|
+| **Missing Payer** | `paid_by` column is empty. | Every expense requires a payer for balance tracking. | Assigns the expense to the default group creator. Flags for manual review. |
+| **Unknown Payer / Split Member** | Name string fails direct DB lookup. Followed by a Levenshtein Distance calculation (threshold ≤ 2). | Corrects minor typos (e.g., "Devv" -> "Dev"). If the distance > 2, it assumes a completely unregistered user, generates a dummy email, inserts them into the `users` and `group_members` tables instantly. | Typos are auto-fixed (`fuzzy_matched_variant`). New dummy creations are flagged for review (`created_unknown_member`). |
+| **Pre-join / Post-departure Expense** | Compares expense date against the `joined_at` and `left_at` timestamps of the target members. | Members cannot legally be charged for expenses incurred before they joined or after they left the group. | Excludes the invalid member from the split calculation for that specific row. |
+
+### Semantic Anomalies
+| Anomaly Type | Detection Logic | Resolution Policy | Post-Action Status |
+|--------------|-----------------|-------------------|--------------------|
+| **Settlement as Expense** | NLP substring detection on the description column (looks for `paid back`, `settlement`, `deposit`). | Settlements represent the transfer of existing debt, not the creation of new shared debt. Mixing them corrupts group balances. | Skips row from the expense ledger, queues it for insertion into the peer-to-peer `settlements` table. Flags for review. |
+| **Conflicting Split Meta** | Detects colloquial terms ("share", "unequal") instead of strict enums (`equal`, `percentage`, `exact`, `shares`). | Maps conversational terms to supported strict backend enums. | Auto-fixed. Defaulted to closest strict enum. |
+| **Split Percentage Sum Error** | Validates that all defined percentages sum precisely to 100%. | Math errors or rounding errors in external CSVs are common. | Proportionally normalizes the percentages to perfectly equal 100% using a weight multiplier. Flags for review. |
+
+### Duplication Anomalies
+| Anomaly Type | Detection Logic | Resolution Policy | Post-Action Status |
+|--------------|-----------------|-------------------|--------------------|
+| **Exact Duplicates** | Matches `Date` + `Payer` + `Amount` + `Exact Description` against already processed rows. | Identical consecutive or historical rows are almost always user export errors. | Skips row automatically. |
+| **Fuzzy Duplicates** | Matches `Date` + `Payer` + Levenshtein `Description` (≤ 3). Amount may vary slightly. | Identifies potential double-entries (e.g., "Uber to Airport" and "Uber Airport trip"). | Halts the import process. Places the items in a staging table (`duplicate_pairs`) and requires human resolution via the UI wizard (Keep Both, Keep A, Keep B). |
 
 ---
 
-## 1. CSV Anomaly Log & Resolution Policies
+## 2. Database Schema
 
-Our importer ingests the CSV file exactly as provided. We detected **15 distinct data problems** across the 43 rows, resolved using the following documented policies:
+SpreeTail relies on a strict, relational PostgreSQL database to guarantee financial integrity. Below is the comprehensive schema design.
 
-| Anomaly Type | Description / CSV Rows Affected | Resolution Policy & Implementation Action |
-|---|---|---|
-| **DUPLICATE_EXACT** | **Row 5 & 6**: Marina Bites dinners logged twice (same date, payer, amount, description). | **Skip 2nd entry**. The duplicate row is excluded from expenses, and logged in `import_anomalies` as skipped. |
-| **DUPLICATE_FUZZY** | **Row 24 & 25**: Thalassa dinners logged by Aisha (2400) and Rohan (2450) on March 11. | **Import both, flag for review**. A duplicate pair is created in `duplicate_pairs` for side-by-side comparison. The user must resolve it in the UI ("Keep both", "Keep A only", "Keep B only"). |
-| **SETTLEMENT_AS_EXPENSE** | **Row 14**: "Rohan paid Aisha back" (5000 INR).<br>**Row 38**: "Sam deposit share" (15000 INR). | **Skip expense, record as settlement**. Detected by keywords ("paid back", "deposit share"). We skip creating an expense and instead insert a settlement row in the `settlements` table. |
-| **POST_DEPARTURE_EXPENSE** | **Row 36**: Meera included in "Groceries BigBasket" on April 2, after she left the group (March 28). | **Exclude member, recalculate split**. Meera is removed from the split list, and the bill is split among the remaining active members. |
-| **PRE_JOIN_EXPENSE** | **Row 38**: Sam included in a transaction before his join date. | **Exclude member, recalculate split** (or skip if it is a settlement). Sam is excluded from any expense split occurring before he joined. |
-| **INVALID_DATE_FORMAT** | **Row 16**: `01/03/2026` (DD/MM/YYYY).<br>**Row 27**: `Mar 14` (missing year). | **Normalize formatting**. DD/MM/YYYY is parsed. "Mar 14" is matched with the surrounding year context (2026) to form `2026-03-14`. |
-| **AMBIGUOUS_DATE** | **Row 34**: `04/05/2026` (is this April 5 or May 4?). | **Resolve via surrounding context**. The row is sandwiched between March 28 and April 1. Since May 4 is out of order, we assume **April 5** (MM/DD/YYYY) and flag the ambiguity. |
-| **MISSING_PAYER** | **Row 13**: "House cleaning supplies" (780 INR) has an empty `paid_by` field. | **Assign default, flag for review**. We assign the group creator or first member as the payer, and set `requires_review = true` so the user can reassign it. |
-| **NEGATIVE_AMOUNT** | **Row 26**: "Parasailing refund" (-30 USD). | **Import as refund split**. The negative split credits the participating members and debits the payer. |
-| **SPLIT_PERCENTAGE_SUM** | **Row 15 & 32**: Pizza and Brunch percentages sum to 110% (30% + 30% + 30% + 20%). | **Proportional normalization**. We scale the percentages proportionally so they sum to exactly 100% (e.g. 27.27%, 27.27%, 27.27%, 18.18%). |
-| **NAME_VARIANT** | **Row 11**: `Priya S` paid.<br>**Row 9**: `priya` (lowercase).<br>**Row 27**: `rohan ` (trailing spaces). | **Fuzzy match**. Trim spaces and perform lowercase comparison. For "Priya S", Levenshtein distance <= 2 is used to resolve the variant to "Priya". |
-| **UNKNOWN_MEMBER** | **Row 5 & 23**: `Dev` and `Dev's friend Kabir` are not in the group. | **Auto-add member, flag for review**. We check if they exist as database users. If not, we create placeholder user accounts (e.g., `kabir.groupid@spreetail.com`) and add them to the group. |
-| **ZERO_AMOUNT** | **Row 31**: "Dinner order Swiggy" (0 INR). | **Skip row**. We exclude the row from the import list since it has no financial value. |
-| **MISSING_CURRENCY** | **Row 28**: "Groceries DMart" has an empty currency field. | **Default to INR**. The record is normalized to INR. |
-| **AMOUNT_FORMATTING** | **Row 7**: `"1,200"` (quotes and commas).<br>**Row 10**: `899.995` (3 decimals).<br>**Row 29**: ` 1450 ` (spaces). | **Normalize amount string**. Strip commas and quotes, parse as float, and round to 2 decimal places (e.g. 899.995 -> 900.00). |
-| **CONFLICTING_SPLIT_META** | **Row 12**: "Aisha birthday cake" has type `unequal` (resolved to `exact` based on details).<br>**Row 42**: type is `equal` but share details are given. | **Metadata resolution**. We map `unequal` to `exact` splits, and for Row 42, we prioritize `split_type = equal` and ignore the extra details. |
+### Core Tables
+- **`users`**
+  - `id` (SERIAL PRIMARY KEY)
+  - `name` (VARCHAR)
+  - `email` (VARCHAR UNIQUE)
+  - `password_hash` (VARCHAR)
+  - *Purpose*: Core identity tracking. Includes auto-generated "dummy" accounts created during CSV ingestion.
 
----
+- **`groups`**
+  - `id` (SERIAL PRIMARY KEY)
+  - `name` (VARCHAR)
+  - `currency` (VARCHAR, Default 'INR')
+  - `created_by` (INT FOREIGN KEY to `users(id)`)
+  - *Purpose*: Defines collaborative workspaces.
 
-## 2. PostgreSQL Database Schema
+- **`group_members`**
+  - `id` (SERIAL PRIMARY KEY)
+  - `group_id` (INT FOREIGN KEY to `groups(id)`)
+  - `user_id` (INT FOREIGN KEY to `users(id)`)
+  - `joined_at` (TIMESTAMP)
+  - `left_at` (TIMESTAMP NULL)
+  - *Constraints*: UNIQUE(`group_id`, `user_id`, `joined_at`).
+  - *Purpose*: Join table tracking temporal group participation. Critical for validating `Pre-join / Post-departure Expense` anomalies.
 
-We designed a normalized, relational database schema with referential integrity constraints, check constraints, and optimized indexes:
+### Ledger Tables
+- **`expenses`**
+  - `id` (SERIAL PRIMARY KEY)
+  - `group_id` (INT FOREIGN KEY to `groups(id)`)
+  - `paid_by_user_id` (INT FOREIGN KEY to `users(id)`)
+  - `amount_original` (DECIMAL)
+  - `currency` (VARCHAR)
+  - `amount_inr` (DECIMAL)
+  - `exchange_rate` (DECIMAL)
+  - `description` (TEXT)
+  - `expense_date` (DATE)
+  - `split_type` (VARCHAR - `equal`, `percentage`, `exact`, `shares`)
+  - *Purpose*: The core shared liability ledger.
 
-```sql
--- 1. USERS TABLE
-CREATE TABLE IF NOT EXISTS users (
-    id              SERIAL PRIMARY KEY,
-    email           VARCHAR(255) UNIQUE NOT NULL,
-    name            VARCHAR(255) NOT NULL,
-    password_hash   VARCHAR(255) NOT NULL,
-    avatar_url      VARCHAR(500),
-    created_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+- **`expense_splits`**
+  - `id` (SERIAL PRIMARY KEY)
+  - `expense_id` (INT FOREIGN KEY to `expenses(id)`)
+  - `user_id` (INT FOREIGN KEY to `users(id)`)
+  - `split_value` (DECIMAL NULL)
+  - `amount_inr` (DECIMAL)
+  - *Purpose*: Records exactly how much debt is allocated to each member per expense based on the `split_type` math.
 
--- 2. GROUPS TABLE
-CREATE TABLE IF NOT EXISTS groups (
-    id              SERIAL PRIMARY KEY,
-    name            VARCHAR(255) NOT NULL,
-    invite_code     VARCHAR(10) UNIQUE NOT NULL,
-    created_by      INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    created_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+- **`settlements`**
+  - `id` (SERIAL PRIMARY KEY)
+  - `group_id` (INT FOREIGN KEY to `groups(id)`)
+  - `payer_id` (INT FOREIGN KEY to `users(id)`)
+  - `payee_id` (INT FOREIGN KEY to `users(id)`)
+  - `amount_inr` (DECIMAL)
+  - `settled_at` (DATE)
+  - *Purpose*: Tracks peer-to-peer repayments intended to zero-out ledger debts.
 
--- 3. GROUP MEMBERS TABLE
--- Tracks time-varying membership. joined_at and left_at date-gate transactions.
-CREATE TABLE IF NOT EXISTS group_members (
-    id              SERIAL PRIMARY KEY,
-    group_id        INTEGER NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
-    user_id         INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    joined_at       DATE NOT NULL,
-    left_at         DATE,  -- NULL means currently active in group
-    UNIQUE(group_id, user_id, joined_at)
-);
+### Ingestion Auditing Tables
+- **`import_logs`**
+  - `id` (SERIAL PRIMARY KEY)
+  - `group_id` (INT FOREIGN KEY to `groups(id)`)
+  - `file_name` (VARCHAR)
+  - `status` (VARCHAR - `previewing`, `completed`, `failed`)
+  - `imported_by` (INT FOREIGN KEY to `users(id)`)
+  - *Purpose*: Master record for a CSV upload session.
 
--- 4. EXPENSES TABLE
--- Stores original currency, exchange rate, and converted INR value.
-CREATE TYPE split_type_enum AS ENUM ('equal', 'percentage', 'exact', 'shares');
+- **`import_anomalies`**
+  - `id` (SERIAL PRIMARY KEY)
+  - `import_log_id` (INT FOREIGN KEY to `import_logs(id)`)
+  - `row_number` (INT)
+  - `anomaly_type` (VARCHAR)
+  - `original_value` (TEXT)
+  - `resolved_value` (TEXT NULL)
+  - `action_taken` (VARCHAR)
+  - `requires_review` (BOOLEAN)
+  - *Purpose*: Granular auditing. Records every single auto-fix applied during ingestion for historical transparency.
 
-CREATE TABLE IF NOT EXISTS expenses (
-    id                  SERIAL PRIMARY KEY,
-    group_id            INTEGER NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
-    paid_by_user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
-    description         VARCHAR(500) NOT NULL,
-    amount_original     NUMERIC(12,2) NOT NULL,
-    currency            VARCHAR(3) NOT NULL DEFAULT 'INR',
-    amount_inr          NUMERIC(12,2) NOT NULL,
-    exchange_rate       NUMERIC(10,4) NOT NULL DEFAULT 1.0000,
-    expense_date        DATE NOT NULL,
-    split_type          split_type_enum NOT NULL DEFAULT 'equal',
-    notes               TEXT,
-    created_by          INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    created_at          TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    is_deleted          BOOLEAN DEFAULT FALSE
-);
-
--- 5. EXPENSE SPLITS TABLE
-CREATE TABLE IF NOT EXISTS expense_splits (
-    id                  SERIAL PRIMARY KEY,
-    expense_id          INTEGER NOT NULL REFERENCES expenses(id) ON DELETE CASCADE,
-    user_id             INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
-    share_amount_inr    NUMERIC(12,2) NOT NULL,
-    split_value         NUMERIC(12,4),  -- stores %, amount, or shares depending on split_type
-    UNIQUE(expense_id, user_id)
-);
-
--- 6. SETTLEMENTS TABLE
--- Records direct payments between members to settle debts.
-CREATE TABLE IF NOT EXISTS settlements (
-    id              SERIAL PRIMARY KEY,
-    group_id        INTEGER NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
-    payer_id        INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
-    payee_id        INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
-    amount_inr      NUMERIC(12,2) NOT NULL,
-    settled_at      DATE NOT NULL DEFAULT CURRENT_DATE,
-    recorded_by     INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    created_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    CHECK (payer_id != payee_id)
-);
-
--- 7. IMPORT LOGS TABLE
-CREATE TYPE import_status_enum AS ENUM ('pending', 'previewing', 'confirmed', 'failed');
-
-CREATE TABLE IF NOT EXISTS import_logs (
-    id              SERIAL PRIMARY KEY,
-    group_id        INTEGER NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
-    file_name       VARCHAR(255) NOT NULL,
-    imported_by     INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    imported_at     TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    total_rows      INTEGER DEFAULT 0,
-    imported_rows   INTEGER DEFAULT 0,
-    skipped_rows    INTEGER DEFAULT 0,
-    anomaly_count   INTEGER DEFAULT 0,
-    status          import_status_enum DEFAULT 'pending'
-);
-
--- 8. IMPORT ANOMALIES TABLE
-CREATE TABLE IF NOT EXISTS import_anomalies (
-    id              SERIAL PRIMARY KEY,
-    import_log_id   INTEGER NOT NULL REFERENCES import_logs(id) ON DELETE CASCADE,
-    row_number      INTEGER NOT NULL,
-    column_name     VARCHAR(100),
-    anomaly_type    VARCHAR(50) NOT NULL,
-    original_value  TEXT,
-    resolved_value  TEXT,
-    action_taken    VARCHAR(100) NOT NULL,
-    requires_review BOOLEAN DEFAULT FALSE,
-    resolved_by     INTEGER REFERENCES users(id),
-    resolved_at     TIMESTAMP WITH TIME ZONE
-);
-
--- 9. DUPLICATE PAIRS TABLE
-CREATE TYPE duplicate_status_enum AS ENUM ('pending', 'kept_both', 'deleted_a', 'deleted_b', 'merged');
-
-CREATE TABLE IF NOT EXISTS duplicate_pairs (
-    id                  SERIAL PRIMARY KEY,
-    import_log_id       INTEGER NOT NULL REFERENCES import_logs(id) ON DELETE CASCADE,
-    row_a_number        INTEGER NOT NULL,
-    row_b_number        INTEGER NOT NULL,
-    similarity_reason   TEXT NOT NULL,
-    status              duplicate_status_enum DEFAULT 'pending',
-    action_taken_by     INTEGER REFERENCES users(id),
-    action_taken_at     TIMESTAMP WITH TIME ZONE
-);
-
--- 10. REFRESH TOKENS TABLE
-CREATE TABLE IF NOT EXISTS refresh_tokens (
-    id              SERIAL PRIMARY KEY,
-    user_id         INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    token_hash      VARCHAR(255) NOT NULL,
-    expires_at      TIMESTAMP WITH TIME ZONE NOT NULL,
-    created_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    is_revoked      BOOLEAN DEFAULT FALSE
-);
-
--- INDEXES
-CREATE INDEX idx_group_members_group ON group_members(group_id);
-CREATE INDEX idx_group_members_user ON group_members(user_id);
-CREATE INDEX idx_group_members_dates ON group_members(group_id, joined_at, left_at);
-CREATE INDEX idx_expenses_group ON expenses(group_id);
-CREATE INDEX idx_expenses_date ON expenses(expense_date);
-CREATE INDEX idx_expenses_paid_by ON expenses(paid_by_user_id);
-CREATE INDEX idx_expense_splits_expense ON expense_splits(expense_id);
-CREATE INDEX idx_expense_splits_user ON expense_splits(user_id);
-CREATE INDEX idx_settlements_group ON settlements(group_id);
-CREATE INDEX idx_import_anomalies_log ON import_anomalies(import_log_id);
-CREATE INDEX idx_duplicate_pairs_log ON duplicate_pairs(import_log_id);
-CREATE INDEX idx_refresh_tokens_user ON refresh_tokens(user_id);
-```
+- **`duplicate_pairs`**
+  - `id` (SERIAL PRIMARY KEY)
+  - `import_log_id` (INT FOREIGN KEY to `import_logs(id)`)
+  - `row_a_number` (INT)
+  - `row_b_number` (INT)
+  - `similarity_reason` (TEXT)
+  - `status` (VARCHAR - `pending`, `kept_both`, `deleted_a`, `deleted_b`)
+  - *Purpose*: Staging table. Holds fuzzy duplicates hostage until a user explicitly resolves them via the frontend UI.

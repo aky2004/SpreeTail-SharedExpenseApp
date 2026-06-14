@@ -11,11 +11,12 @@ import {
   Receipt,
   Users,
   AlertOctagon,
-  ArrowUpRight,
+  ArrowRight,
   PlusCircle,
   FileSpreadsheet,
   HandCoins,
-  ChevronRight
+  ChevronRight,
+  Sparkles,
 } from 'lucide-react';
 import {
   BarChart,
@@ -24,15 +25,119 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  Cell
+  Cell,
 } from 'recharts';
 
+// ─── Custom Chart Tooltip ─────────────────────────────────────────────────────
+const ChartTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div style={{
+      background: 'rgba(10,10,26,0.96)',
+      border: '1px solid rgba(99,102,241,0.25)',
+      borderRadius: '10px',
+      padding: '9px 14px',
+      boxShadow: '0 12px 40px rgba(0,0,0,0.7), 0 0 0 1px rgba(99,102,241,0.08) inset',
+    }}>
+      <div style={{ color: '#475569', fontSize: '9.5px', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+        {label}
+      </div>
+      <div style={{ color: 'white', fontSize: '13px', fontFamily: "'JetBrains Mono', monospace", fontWeight: 600 }}>
+        ₹{Number(payload[0]?.value ?? 0).toLocaleString('en-IN')}
+      </div>
+    </div>
+  );
+};
+
+// ─── Stat Card ────────────────────────────────────────────────────────────────
+const StatCard = ({ label, value, sub, icon: Icon, accentColor, iconBg, delay = '0ms' }: any) => (
+  <div
+    className="animate-fade-in"
+    style={{
+      position: 'relative', overflow: 'hidden',
+      borderRadius: '14px', padding: '22px',
+      display: 'flex', flexDirection: 'column', gap: '16px',
+      background: 'rgba(13,13,28,0.9)',
+      border: '1px solid rgba(255,255,255,0.07)',
+      boxShadow: `0 4px 24px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.03) inset`,
+      animationDelay: delay,
+      transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, border-color 0.3s ease',
+    }}
+    onMouseEnter={e => {
+      const el = e.currentTarget as HTMLDivElement;
+      el.style.transform = 'translateY(-3px) scale(1.01)';
+      el.style.boxShadow = `0 16px 40px rgba(0,0,0,0.5), 0 0 40px ${accentColor}25, 0 0 0 1px ${accentColor}30 inset`;
+      el.style.borderColor = `${accentColor}40`;
+    }}
+    onMouseLeave={e => {
+      const el = e.currentTarget as HTMLDivElement;
+      el.style.transform = 'translateY(0) scale(1)';
+      el.style.boxShadow = '0 4px 24px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.03) inset';
+      el.style.borderColor = 'rgba(255,255,255,0.07)';
+    }}
+  >
+    {/* Top accent line */}
+    <div
+      style={{
+        position: 'absolute', top: 0, left: 0, right: 0, height: '1.5px',
+        background: `linear-gradient(90deg, ${accentColor} 0%, ${accentColor}60 60%, transparent 100%)`,
+        borderRadius: '14px 14px 0 0',
+      }}
+    />
+
+    {/* Ambient glow blob */}
+    <div style={{
+      position: 'absolute', top: '-30px', right: '-20px',
+      width: '100px', height: '100px',
+      background: `radial-gradient(circle, ${accentColor}14 0%, transparent 70%)`,
+      pointerEvents: 'none',
+    }} />
+
+    {/* Header row */}
+    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+      <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#3d4a5c' }}>
+        {label}
+      </span>
+      <div
+        style={{
+          width: '32px', height: '32px', borderRadius: '9px', flexShrink: 0,
+          background: `linear-gradient(135deg, ${accentColor}20, ${accentColor}0d)`,
+          border: `1px solid ${accentColor}25`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: `0 2px 8px ${accentColor}15`,
+        }}
+      >
+        <Icon size={14} style={{ color: accentColor }} />
+      </div>
+    </div>
+
+    {/* Value */}
+    <div style={{
+      fontFamily: "'JetBrains Mono', monospace",
+      fontSize: '1.55rem',
+      fontWeight: 600,
+      letterSpacing: '-0.03em',
+      lineHeight: 1,
+      color: 'white',
+    }}>
+      {value}
+    </div>
+
+    {/* Subtitle */}
+    {sub && (
+      <div style={{ fontSize: '11px', color: '#3d4a5c', lineHeight: 1.4 }}>
+        {sub}
+      </div>
+    )}
+  </div>
+);
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function Dashboard() {
   const { currentGroup } = useGroup();
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Data states
   const [expenses, setExpenses] = useState<any[]>([]);
   const [netBalances, setNetBalances] = useState<any[]>([]);
   const [simplifiedDebts, setSimplifiedDebts] = useState<any[]>([]);
@@ -45,19 +150,15 @@ export default function Dashboard() {
     try {
       setIsLoading(true);
       setError(null);
-
-      // Fetch expenses
-      const expensesRes = await api.get(`/expenses/group/${currentGroup.id}?limit=100`);
-      setExpenses(expensesRes.data.expenses || []);
-
-      // Fetch balances
-      const balancesRes = await api.get(`/balances/group/${currentGroup.id}`);
-      setNetBalances(balancesRes.data.netBalances || []);
-      setSimplifiedDebts(balancesRes.data.simplifiedDebts || []);
-
-      // Fetch import logs
-      const logsRes = await api.get(`/import/group/${currentGroup.id}/logs`);
-      setImportLogs(logsRes.data || []);
+      const [expR, balR, logR] = await Promise.all([
+        api.get(`/expenses/group/${currentGroup.id}?limit=100`),
+        api.get(`/balances/group/${currentGroup.id}`),
+        api.get(`/import/group/${currentGroup.id}/logs`),
+      ]);
+      setExpenses(expR.data.expenses || []);
+      setNetBalances(balR.data.netBalances || []);
+      setSimplifiedDebts(balR.data.simplifiedDebts || []);
+      setImportLogs(logR.data || []);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to load dashboard data');
     } finally {
@@ -65,220 +166,206 @@ export default function Dashboard() {
     }
   }, [currentGroup]);
 
-  useEffect(() => {
-    fetchData();
-  }, [currentGroup, fetchData]);
+  useEffect(() => { fetchData(); }, [currentGroup, fetchData]);
 
   if (!currentGroup) {
     return (
       <MainLayout>
-        <div className="p-8 flex items-center justify-center h-full">
-          <p className="text-[var(--color-text-muted)]">No active group selected.</p>
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div className="text-center">
+            <div className="text-4xl mb-4">🏠</div>
+            <p style={{ color: '#64748b', fontSize: '14px' }}>No active group selected.</p>
+          </div>
         </div>
       </MainLayout>
     );
   }
 
-  // --- Calculations ---
-
-  // 1. Total Group Spending (INR)
-  const totalGroupSpending = expenses.reduce((sum, e) => sum + Number(e.amount_inr), 0);
-
-  // 2. Logged-in User's standing
+  // ─── Calculations ─────────────────────────────────────────────────────────
+  const totalGroupSpending = expenses.reduce((s, e) => s + Number(e.amount_inr), 0);
   const myStanding = netBalances.find(b => b.userId === user?.id);
   const myStandingAmount = myStanding ? myStanding.amount : 0;
-
-  // 3. Active members count
   const memberCount = netBalances.length;
-
-  // 4. Pending duplicate/import reviews
   const pendingReviews = importLogs.filter(l => l.status === 'previewing').length;
 
-  // 5. Category Analysis
-  const getCategory = (desc: string): string => {
+  const getCategory = (desc: string) => {
     const d = desc.toLowerCase();
     if (d.includes('rent')) return 'Rent';
-    if (
-      d.includes('grocery') || d.includes('groceries') || d.includes('basket') ||
-      d.includes('dmart') || d.includes('pizza') || d.includes('dinner') ||
-      d.includes('lunch') || d.includes('brunch') || d.includes('swiggy') ||
-      d.includes('bites') || d.includes('food') || d.includes('cake')
-    ) return 'Food';
-    if (d.includes('wifi') || d.includes('electricity') || d.includes('cylinder') || d.includes('bill')) return 'Utilities';
-    if (d.includes('maid') || d.includes('cleaning') || d.includes('salary')) return 'Services';
-    if (
-      d.includes('flight') || d.includes('villa') || d.includes('scooter') ||
-      d.includes('cab') || d.includes('parasailing') || d.includes('trip') ||
-      d.includes('airport') || d.includes('farewell')
-    ) return 'Travel';
+    if (['grocery', 'dmart', 'pizza', 'dinner', 'lunch', 'food', 'swiggy', 'cake'].some(k => d.includes(k))) return 'Food';
+    if (['wifi', 'electricity', 'cylinder', 'bill'].some(k => d.includes(k))) return 'Utilities';
+    if (['maid', 'cleaning', 'salary'].some(k => d.includes(k))) return 'Services';
+    if (['flight', 'villa', 'scooter', 'cab', 'parasailing', 'trip', 'airport'].some(k => d.includes(k))) return 'Travel';
     return 'Other';
   };
 
-  const categoryTotals: Record<string, number> = {};
+  const catTotals: Record<string, number> = {};
   expenses.forEach(e => {
     const cat = getCategory(e.description);
-    categoryTotals[cat] = (categoryTotals[cat] || 0) + Number(e.amount_inr);
+    catTotals[cat] = (catTotals[cat] || 0) + Number(e.amount_inr);
   });
+  const chartCatData = Object.entries(catTotals)
+    .map(([name, value]) => ({ name, value: Math.round(value) }))
+    .sort((a, b) => b.value - a.value);
 
-  const chartCategoryData = Object.entries(categoryTotals).map(([name, value]) => ({
-    name,
-    value: Math.round(value)
-  })).sort((a, b) => b.value - a.value);
-
-  // 6. Member Spending Analysis
-  const memberSpendingTotals: Record<string, number> = {};
+  const memberSpending: Record<string, number> = {};
   expenses.forEach(e => {
     const payer = e.paid_by_name || `User ${e.paid_by_user_id}`;
-    memberSpendingTotals[payer] = (memberSpendingTotals[payer] || 0) + Number(e.amount_inr);
+    memberSpending[payer] = (memberSpending[payer] || 0) + Number(e.amount_inr);
   });
+  const chartMemberData = Object.entries(memberSpending)
+    .map(([name, value]) => ({ name: name.split(' ')[0], value: Math.round(value) }))
+    .sort((a, b) => b.value - a.value);
 
-  const chartMemberData = Object.entries(memberSpendingTotals).map(([name, value]) => ({
-    name: name.split(' ')[0], // short name
-    value: Math.round(value)
-  })).sort((a, b) => b.value - a.value);
+  const barColors = ['#6366f1', '#8b5cf6', '#10b981', '#f59e0b', '#f43f5e', '#3b82f6'];
 
-  const colors = ['#00B4A6', '#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444', '#10B981'];
+  const catColors: Record<string, string> = {
+    Rent: '#6366f1', Food: '#10b981', Utilities: '#f59e0b',
+    Services: '#8b5cf6', Travel: '#3b82f6', Other: '#475569',
+  };
+
+  const splitBadgeColor: Record<string, string> = {
+    equal: 'badge-indigo', percentage: 'badge-violet', exact: 'badge-blue', shares: 'badge-amber',
+  };
 
   return (
     <MainLayout>
-      <div className="p-8 max-w-7xl mx-auto w-full flex-1 flex flex-col min-h-0 overflow-y-auto animate-fade-in font-inter">
-        
-        {/* Header HUD */}
-        <div className="flex items-center justify-between mb-8 shrink-0">
+      {/* ── Page wrapper with generous, consistent padding ── */}
+      <div style={{ padding: '28px 32px', maxWidth: '1440px', margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+
+        {/* ── Page Header ─────────────────────────────────── */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '28px', gap: '16px' }}>
           <div>
-            <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-2">
-              <span>Workspace Dashboard</span>
+            {/* Breadcrumb */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+              <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#2d3748' }}>
+                Dashboard
+              </span>
+              <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: '#1e293b', flexShrink: 0, display: 'inline-block' }} />
+              <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#4f46e5' }}>
+                {currentGroup.name}
+              </span>
+            </div>
+            <h1 style={{
+              fontSize: '26px', fontWeight: 700, color: 'white',
+              letterSpacing: '-0.04em', lineHeight: 1.1, margin: 0,
+            }}>
+              Overview
             </h1>
-            <p className="text-xs text-[var(--color-text-muted)] font-semibold mt-1">
-              Active Group: <span className="text-[var(--color-accent)]">{currentGroup.name}</span> (Invite Code: {currentGroup.invite_code})
+            <p style={{ fontSize: '13px', color: '#3d4a5c', marginTop: '6px', lineHeight: 1.5 }}>
+              Track spending, balances and debts for your group.
             </p>
           </div>
-          <div className="hidden md:flex gap-3">
-            <button
-              onClick={() => navigate('/expenses')}
-              className="flex items-center justify-center gap-2 px-4 py-2 border border-[var(--color-border-card)] hover:bg-[var(--color-bg-card-hover)] text-white font-semibold rounded-xl text-xs transition-colors cursor-pointer"
-            >
-              <Receipt size={14} />
-              <span>View Bills</span>
+
+          <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+            <button onClick={() => navigate('/expenses')} className="btn-ghost" style={{ fontSize: '12.5px', padding: '8px 16px' }}>
+              <Receipt size={13} />
+              View Bills
             </button>
-            <button
-              onClick={() => navigate('/balances')}
-              className="flex items-center justify-center gap-2 px-4 py-2 border border-[var(--color-border-card)] hover:bg-[var(--color-bg-card-hover)] text-white font-semibold rounded-xl text-xs transition-colors cursor-pointer"
-            >
-              <Scale size={14} />
-              <span>Debts</span>
+            <button onClick={() => navigate('/balances')} className="btn-primary" style={{ fontSize: '12.5px', padding: '8px 16px' }}>
+              <Scale size={13} />
+              Settle Up
             </button>
           </div>
         </div>
 
+        {/* ── Error banner ────────────────────────────────── */}
         {error && (
-          <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl mb-6 text-sm shrink-0">
-            ⚠️ {error}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '12px',
+            padding: '14px 18px', borderRadius: '14px', marginBottom: '24px',
+            background: 'rgba(244,63,94,0.08)', border: '1px solid rgba(244,63,94,0.2)', color: '#f43f5e',
+            fontSize: '13px',
+          }}>
+            <AlertOctagon size={16} style={{ flexShrink: 0 }} />
+            {error}
           </div>
         )}
 
-        {/* Stats Summary Cards */}
-        {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8 shrink-0">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-28 bg-[var(--color-bg-card)] border border-[var(--color-border-card)] rounded-2xl animate-pulse" />
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8 shrink-0">
-            {/* Card 1: User's Net Standing */}
-            <div className="bg-[var(--color-bg-card)] border border-[var(--color-border-card)] rounded-2xl p-5 shadow-lg relative overflow-hidden group">
-              <div className="flex items-center justify-between mb-3 text-[var(--color-text-muted)]">
-                <span className="text-xs font-semibold uppercase tracking-wider">Your Standing</span>
-                <div className={`p-1.5 rounded-lg border ${myStandingAmount >= 0 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}>
-                  {myStandingAmount >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
-                </div>
-              </div>
-              <h3 className={`text-2xl font-bold font-mono ${myStandingAmount >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                {myStandingAmount >= 0 ? '+' : ''}₹{myStandingAmount.toFixed(2)}
-              </h3>
-              <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
-                {myStandingAmount >= 0 ? 'You are owed in this group' : 'You owe cash to others'}
-              </p>
-            </div>
+        {/* ── Stat Cards — 4 columns ───────────────────────── */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+          {isLoading ? (
+            [...Array(4)].map((_, i) => (
+              <div key={i} className="skeleton" style={{ height: '140px', borderRadius: '16px' }} />
+            ))
+          ) : (
+            <>
+              <StatCard
+                label="Your Standing"
+                value={`${myStandingAmount >= 0 ? '+' : ''}₹${Math.abs(myStandingAmount).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
+                sub={myStandingAmount >= 0 ? 'You are owed money' : 'You owe money'}
+                icon={myStandingAmount >= 0 ? TrendingUp : TrendingDown}
+                accentColor={myStandingAmount >= 0 ? '#10b981' : '#f43f5e'}
+                iconBg={myStandingAmount >= 0 ? 'rgba(16,185,129,0.12)' : 'rgba(244,63,94,0.12)'}
+                delay="0ms"
+              />
+              <StatCard
+                label="Group Spending"
+                value={`₹${(totalGroupSpending / 1000).toFixed(1)}k`}
+                sub={`${expenses.length} transactions total`}
+                icon={Receipt}
+                accentColor="#6366f1"
+                iconBg="rgba(99,102,241,0.12)"
+                delay="60ms"
+              />
+              <StatCard
+                label="Active Members"
+                value={memberCount}
+                sub="in this workspace"
+                icon={Users}
+                accentColor="#8b5cf6"
+                iconBg="rgba(139,92,246,0.12)"
+                delay="120ms"
+              />
+              <StatCard
+                label="Pending Reviews"
+                value={pendingReviews}
+                sub={pendingReviews > 0 ? 'Imports need attention' : 'All clear'}
+                icon={AlertOctagon}
+                accentColor={pendingReviews > 0 ? '#f59e0b' : '#334155'}
+                iconBg={pendingReviews > 0 ? 'rgba(245,158,11,0.12)' : 'rgba(255,255,255,0.04)'}
+                delay="180ms"
+              />
+            </>
+          )}
+        </div>
 
-            {/* Card 2: Total Group Expenses */}
-            <div className="bg-[var(--color-bg-card)] border border-[var(--color-border-card)] rounded-2xl p-5 shadow-lg relative overflow-hidden group">
-              <div className="flex items-center justify-between mb-3 text-[var(--color-text-muted)]">
-                <span className="text-xs font-semibold uppercase tracking-wider">Group Spending</span>
-                <div className="p-1.5 rounded-lg border bg-blue-500/10 border-blue-500/20 text-blue-400">
-                  <Receipt size={16} />
-                </div>
-              </div>
-              <h3 className="text-2xl font-bold text-white font-mono">
-                ₹{totalGroupSpending.toFixed(2)}
-              </h3>
-              <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
-                Sum of {expenses.length} logged group bills
-              </p>
-            </div>
+        {/* ── Charts Row — 3 columns ────────────────────────── */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '24px' }}>
 
-            {/* Card 3: Group Members */}
-            <div className="bg-[var(--color-bg-card)] border border-[var(--color-border-card)] rounded-2xl p-5 shadow-lg relative overflow-hidden group">
-              <div className="flex items-center justify-between mb-3 text-[var(--color-text-muted)]">
-                <span className="text-xs font-semibold uppercase tracking-wider">Members registered</span>
-                <div className="p-1.5 rounded-lg border bg-purple-500/10 border-purple-500/20 text-purple-400">
-                  <Users size={16} />
-                </div>
-              </div>
-              <h3 className="text-2xl font-bold text-white font-mono">
-                {memberCount}
-              </h3>
-              <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
-                Participating in billing calculations
-              </p>
+          {/* Chart: By Category */}
+          <div
+            className="animate-fade-in hover-lift"
+            style={{
+              padding: '24px', display: 'flex', flexDirection: 'column', height: '320px',
+              background: 'rgba(13,13,28,0.9)', borderRadius: '14px',
+              border: '1px solid rgba(255,255,255,0.07)', position: 'relative', overflow: 'hidden',
+              boxShadow: '0 4px 24px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.03) inset',
+            }}
+          >
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1.5px', background: 'linear-gradient(90deg, #6366f1 0%, #6366f160 40%, transparent 100%)' }} />
+            <div style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#3d4a5c', marginBottom: '20px' }}>
+              Spending by Category
             </div>
-
-            {/* Card 4: Pending Import Reviews */}
-            <div className="bg-[var(--color-bg-card)] border border-[var(--color-border-card)] rounded-2xl p-5 shadow-lg relative overflow-hidden group">
-              <div className="flex items-center justify-between mb-3 text-[var(--color-text-muted)]">
-                <span className="text-xs font-semibold uppercase tracking-wider">Duplicate Reviews</span>
-                <div className={`p-1.5 rounded-lg border ${pendingReviews > 0 ? 'bg-amber-500/10 border-amber-500/20 text-amber-400 animate-pulse' : 'bg-zinc-800 border-zinc-700 text-zinc-400'}`}>
-                  <AlertOctagon size={16} />
-                </div>
-              </div>
-              <h3 className={`text-2xl font-bold font-mono ${pendingReviews > 0 ? 'text-amber-400' : 'text-white'}`}>
-                {pendingReviews}
-              </h3>
-              <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
-                {pendingReviews > 0 ? 'Import runs awaiting review' : 'No import conflicts pending'}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Charts & Actions Panel */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 shrink-0">
-          
-          {/* Chart 1: Spending by Category */}
-          <div className="bg-[var(--color-bg-card)] border border-[var(--color-border-card)] rounded-2xl p-5 shadow-lg flex flex-col h-72">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-4">Bills by Category</h4>
-            <div className="flex-1 min-h-0">
+            <div style={{ flex: 1, minHeight: 0 }}>
               {isLoading ? (
-                <div className="h-full flex items-center justify-center">
-                  <div className="w-6 h-6 border-2 border-[var(--color-accent)]/20 border-t-[var(--color-accent)] rounded-full animate-spin" />
+                <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div className="animate-spin" style={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid rgba(99,102,241,0.15)', borderTopColor: '#6366f1' }} />
                 </div>
-              ) : chartCategoryData.length === 0 ? (
-                <div className="h-full flex items-center justify-center text-xs text-[var(--color-text-muted)]">No data yet</div>
+              ) : chartCatData.length === 0 ? (
+                <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                  <Sparkles size={20} style={{ color: '#1e293b' }} />
+                  <p style={{ fontSize: '11px', color: '#334155' }}>No data yet</p>
+                </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartCategoryData} layout="vertical" margin={{ left: -10, right: 10, top: 0, bottom: 0 }}>
-                    <XAxis type="number" stroke="var(--color-text-muted)" fontSize={9} tickLine={false} />
-                    <YAxis type="category" dataKey="name" stroke="var(--color-text-muted)" fontSize={9} tickLine={false} />
-                    <Tooltip
-                      contentStyle={{ background: 'var(--color-bg-sidebar)', border: '1px solid var(--color-border-card)', borderRadius: '10px' }}
-                      labelStyle={{ color: 'white', fontWeight: 'bold', fontSize: '11px' }}
-                      itemStyle={{ color: 'var(--color-accent)', fontSize: '11px' }}
-                      formatter={(value) => [`₹${value}`, 'Spending']}
-                    />
-                    <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                      {chartCategoryData.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                  <BarChart data={chartCatData} layout="vertical" margin={{ left: 0, right: 12, top: 0, bottom: 0 }}>
+                    <XAxis type="number" stroke="#334155" fontSize={9} tickLine={false} axisLine={false}
+                      tickFormatter={v => `₹${(v / 1000).toFixed(0)}k`} />
+                    <YAxis type="category" dataKey="name" stroke="#475569" fontSize={10} tickLine={false} axisLine={false} width={58} />
+                    <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(99,102,241,0.04)' }} />
+                    <Bar dataKey="value" radius={[0, 4, 4, 0]} maxBarSize={12}>
+                      {chartCatData.map((entry, i) => (
+                        <Cell key={i} fill={catColors[entry.name] || barColors[i % barColors.length]} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -287,172 +374,293 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Chart 2: Spending by Member */}
-          <div className="bg-[var(--color-bg-card)] border border-[var(--color-border-card)] rounded-2xl p-5 shadow-lg flex flex-col h-72">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-4">Bills Paid by Member</h4>
-            <div className="flex-1 min-h-0">
+          {/* Chart: By Member */}
+          <div
+            className="animate-fade-in hover-lift"
+            style={{
+              padding: '24px', display: 'flex', flexDirection: 'column', height: '320px',
+              background: 'rgba(13,13,28,0.9)', borderRadius: '14px',
+              border: '1px solid rgba(255,255,255,0.07)', position: 'relative', overflow: 'hidden',
+              boxShadow: '0 4px 24px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.03) inset',
+            }}
+          >
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1.5px', background: 'linear-gradient(90deg, #8b5cf6 0%, #8b5cf660 40%, transparent 100%)' }} />
+            <div style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#3d4a5c', marginBottom: '20px' }}>
+              Paid by Member
+            </div>
+            <div style={{ flex: 1, minHeight: 0 }}>
               {isLoading ? (
-                <div className="h-full flex items-center justify-center">
-                  <div className="w-6 h-6 border-2 border-[var(--color-accent)]/20 border-t-[var(--color-accent)] rounded-full animate-spin" />
+                <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div className="animate-spin" style={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid rgba(99,102,241,0.15)', borderTopColor: '#6366f1' }} />
                 </div>
               ) : chartMemberData.length === 0 ? (
-                <div className="h-full flex items-center justify-center text-xs text-[var(--color-text-muted)]">No data yet</div>
+                <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                  <Sparkles size={20} style={{ color: '#1e293b' }} />
+                  <p style={{ fontSize: '11px', color: '#334155' }}>No data yet</p>
+                </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartMemberData} margin={{ left: -20, right: 0, top: 10, bottom: 0 }}>
-                    <XAxis dataKey="name" stroke="var(--color-text-muted)" fontSize={9} tickLine={false} />
-                    <YAxis stroke="var(--color-text-muted)" fontSize={9} tickLine={false} />
-                    <Tooltip
-                      contentStyle={{ background: 'var(--color-bg-sidebar)', border: '1px solid var(--color-border-card)', borderRadius: '10px' }}
-                      labelStyle={{ color: 'white', fontWeight: 'bold', fontSize: '11px' }}
-                      itemStyle={{ color: 'var(--color-accent)', fontSize: '11px' }}
-                      formatter={(value) => [`₹${value}`, 'Paid']}
-                    />
-                    <Bar dataKey="value" fill="var(--color-accent)" radius={[4, 4, 0, 0]} barSize={25} />
+                  <BarChart data={chartMemberData} margin={{ left: -16, right: 4, top: 8, bottom: 0 }}>
+                    <XAxis dataKey="name" stroke="#475569" fontSize={10} tickLine={false} axisLine={false} />
+                    <YAxis stroke="#334155" fontSize={9} tickLine={false} axisLine={false}
+                      tickFormatter={v => `₹${(v / 1000).toFixed(0)}k`} />
+                    <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(99,102,241,0.04)' }} />
+                    <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={30}>
+                      {chartMemberData.map((_, i) => (
+                        <Cell key={i} fill={barColors[i % barColors.length]} />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               )}
             </div>
           </div>
 
-          {/* Quick Actions Panel */}
-          <div className="bg-[var(--color-bg-card)] border border-[var(--color-border-card)] rounded-2xl p-5 shadow-lg flex flex-col justify-between h-72">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-3 shrink-0">Quick Workspace Actions</h4>
-            <div className="space-y-2.5 grow overflow-y-auto flex flex-col justify-center">
-              <button
-                onClick={() => navigate('/expenses')}
-                className="w-full flex items-center justify-between p-3.5 bg-zinc-900/10 hover:bg-zinc-800/20 border border-[var(--color-border-card)]/40 hover:border-[var(--color-accent)]/30 rounded-xl transition-all cursor-pointer group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-[var(--color-accent)]/10 text-[var(--color-accent)] rounded-lg">
-                    <PlusCircle size={16} />
+          {/* Quick Actions */}
+          <div
+            className="animate-fade-in hover-lift"
+            style={{
+              padding: '24px', display: 'flex', flexDirection: 'column', height: '320px',
+              background: 'rgba(13,13,28,0.9)', borderRadius: '14px',
+              border: '1px solid rgba(255,255,255,0.07)', position: 'relative', overflow: 'hidden',
+              boxShadow: '0 4px 24px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.03) inset',
+            }}
+          >
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1.5px', background: 'linear-gradient(90deg, #10b981 0%, #10b98160 40%, transparent 100%)' }} />
+            <div style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#3d4a5c', marginBottom: '20px' }}>
+              Quick Actions
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, justifyContent: 'center' }}>
+              {[
+                { label: 'Log Shared Bill', sub: 'Supports 4 split modes', icon: PlusCircle, color: '#818cf8', bg: 'linear-gradient(135deg, rgba(129,140,248,0.2), rgba(129,140,248,0.05))', path: '/expenses' },
+                { label: 'Record Settlement', sub: 'Mark a debt as paid', icon: HandCoins, color: '#10b981', bg: 'linear-gradient(135deg, rgba(16,185,129,0.2), rgba(16,185,129,0.05))', path: '/balances' },
+                { label: 'Import CSV Ledger', sub: 'Anomaly review & auto-fix', icon: FileSpreadsheet, color: '#3b82f6', bg: 'linear-gradient(135deg, rgba(59,130,246,0.2), rgba(59,130,246,0.05))', path: '/import' },
+              ].map(({ label, sub, icon: Icon, color, bg, path }) => (
+                <button
+                  key={path}
+                  onClick={() => navigate(path)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '14px',
+                    padding: '12px 14px', borderRadius: '12px',
+                    border: '1px solid transparent',
+                    background: 'transparent', cursor: 'pointer',
+                    textAlign: 'left', transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)', width: '100%',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+                    e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
+                    e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.2)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.borderColor = 'transparent';
+                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  <div style={{
+                    width: 36, height: 36, borderRadius: '10px', background: bg,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                    border: `1px solid ${color}30`, boxShadow: `0 2px 8px ${color}15`,
+                  }}>
+                    <Icon size={16} style={{ color }} />
                   </div>
-                  <div className="text-left">
-                    <span className="text-xs font-semibold text-white block">Log Shared Bill</span>
-                    <span className="text-[10px] text-[var(--color-text-muted)] block mt-0.5">Supports all 4 split rules</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: 'white', lineHeight: 1.3 }}>{label}</div>
+                    <div style={{ fontSize: '11px', color: '#475569', marginTop: '2px', lineHeight: 1.3 }}>{sub}</div>
                   </div>
-                </div>
-                <ArrowUpRight size={14} className="text-[var(--color-text-muted)] group-hover:text-white transition-colors" />
-              </button>
-
-              <button
-                onClick={() => navigate('/balances')}
-                className="w-full flex items-center justify-between p-3.5 bg-zinc-900/10 hover:bg-zinc-800/20 border border-[var(--color-border-card)]/40 hover:border-[var(--color-accent)]/30 rounded-xl transition-all cursor-pointer group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg">
-                    <HandCoins size={16} />
-                  </div>
-                  <div className="text-left">
-                    <span className="text-xs font-semibold text-white block">Record Settlement</span>
-                    <span className="text-[10px] text-[var(--color-text-muted)] block mt-0.5">Settle group flatmate debts</span>
-                  </div>
-                </div>
-                <ArrowUpRight size={14} className="text-[var(--color-text-muted)] group-hover:text-white transition-colors" />
-              </button>
-
-              <button
-                onClick={() => navigate('/import')}
-                className="w-full flex items-center justify-between p-3.5 bg-zinc-900/10 hover:bg-zinc-800/20 border border-[var(--color-border-card)]/40 hover:border-[var(--color-accent)]/30 rounded-xl transition-all cursor-pointer group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-500/10 text-blue-400 rounded-lg">
-                    <FileSpreadsheet size={16} />
-                  </div>
-                  <div className="text-left">
-                    <span className="text-xs font-semibold text-white block">Import CSV Ledger</span>
-                    <span className="text-[10px] text-[var(--color-text-muted)] block mt-0.5">Anomaly review & auto-fixing</span>
-                  </div>
-                </div>
-                <ArrowUpRight size={14} className="text-[var(--color-text-muted)] group-hover:text-white transition-colors" />
-              </button>
+                  <ArrowRight size={14} style={{ color: '#334155', flexShrink: 0 }} />
+                </button>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Lower Lists: Recent Expenses vs Simplified Debts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 shrink-0">
-          
-          {/* Panel 1: Recent Expenses */}
-          <div className="bg-[var(--color-bg-card)] border border-[var(--color-border-card)] rounded-2xl p-5 shadow-lg flex flex-col min-h-[300px]">
-            <div className="flex items-center justify-between mb-4">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)]">Recent Bills</h4>
+        {/* ── Lower: Recent Bills + Outstanding Debts ────── */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', paddingBottom: '32px' }}>
+
+          {/* Recent Bills */}
+          <div className="animate-fade-in hover-lift" style={{
+            padding: '24px', display: 'flex', flexDirection: 'column', minHeight: '340px',
+            background: 'rgba(13,13,28,0.9)', borderRadius: '14px',
+            border: '1px solid rgba(255,255,255,0.07)', position: 'relative', overflow: 'hidden',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.03) inset',
+          }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1.5px', background: 'linear-gradient(90deg, #3b82f6 0%, #3b82f660 40%, transparent 100%)' }} />
+            {/* Section header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+              <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#3d4a5c' }}>
+                Recent Bills
+              </span>
               <button
                 onClick={() => navigate('/expenses')}
-                className="text-[11px] text-[var(--color-accent)] hover:underline flex items-center gap-0.5 font-semibold cursor-pointer"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '3px',
+                  fontSize: '11px', fontWeight: 600, color: '#6366f1',
+                  background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                  transition: 'color 0.2s ease',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#818cf8')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#6366f1')}
               >
-                <span>View All</span>
-                <ChevronRight size={14} />
+                View All <ChevronRight size={12} />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto space-y-3">
+            {/* List */}
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
               {isLoading ? (
-                <div className="py-8 flex justify-center">
-                  <div className="w-6 h-6 border-2 border-[var(--color-accent)]/20 border-t-[var(--color-accent)] rounded-full animate-spin" />
-                </div>
-              ) : expenses.length === 0 ? (
-                <p className="text-xs text-[var(--color-text-muted)] text-center py-12">No expenses recorded yet.</p>
-              ) : (
-                expenses.slice(0, 5).map((expense) => (
-                  <div
-                    key={expense.id}
-                    className="p-3 bg-zinc-900/10 border border-[var(--color-border-card)]/30 rounded-xl flex items-center justify-between gap-4 text-xs hover:bg-zinc-800/10 transition-colors"
-                  >
-                    <div className="min-w-0">
-                      <span className="font-semibold text-white block truncate max-w-[200px]">{expense.description}</span>
-                      <span className="text-[10px] text-[var(--color-text-muted)] block mt-0.5">
-                        Paid by {expense.paid_by_name} on {new Date(expense.expense_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })}
-                      </span>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <span className="font-bold text-white font-mono block">₹{Number(expense.amount_inr).toFixed(2)}</span>
-                      <span className="text-[9px] text-[var(--color-text-muted)] bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-700 capitalize inline-block mt-1">
-                        {expense.split_type}
-                      </span>
-                    </div>
-                  </div>
+                [...Array(5)].map((_, i) => (
+                  <div key={i} className="skeleton" style={{ height: '56px', borderRadius: '10px', animationDelay: `${i * 80}ms` }} />
                 ))
+              ) : expenses.length === 0 ? (
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '32px 0' }}>
+                  <Receipt size={28} style={{ color: '#1e293b' }} />
+                  <p style={{ fontSize: '12px', color: '#334155' }}>No expenses yet</p>
+                </div>
+              ) : (
+                expenses.slice(0, 7).map((expense) => {
+                  const cat = getCategory(expense.description);
+                  const dotColor = catColors[cat] || '#475569';
+                  return (
+                    <div
+                      key={expense.id}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '12px',
+                        padding: '10px 12px', borderRadius: '10px',
+                        border: '1px solid transparent', position: 'relative',
+                        cursor: 'default', transition: 'all 0.2s ease',
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.background = 'rgba(255,255,255,0.025)';
+                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.04)';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.background = 'transparent';
+                        e.currentTarget.style.borderColor = 'transparent';
+                      }}
+                    >
+                      {/* Category dot */}
+                      <div style={{
+                        width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                        background: dotColor, boxShadow: `0 0 8px ${dotColor}80`,
+                      }} />
+
+                      {/* Info */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '13px', fontWeight: 600, color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3 }}>
+                          {expense.description}
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#475569', marginTop: '3px', lineHeight: 1 }}>
+                          {expense.paid_by_name} · {new Date(expense.expense_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })}
+                        </div>
+                      </div>
+
+                      {/* Amount + badge */}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px', flexShrink: 0 }}>
+                        <div style={{ fontSize: '13px', fontWeight: 600, color: 'white', fontFamily: "'JetBrains Mono', monospace" }}>
+                          ₹{Number(expense.amount_inr).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                        </div>
+                        <span className={`badge ${splitBadgeColor[expense.split_type] || 'badge-muted'}`} style={{ fontSize: '8.5px', padding: '1px 6px' }}>
+                          {expense.split_type}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
               )}
             </div>
           </div>
 
-          {/* Panel 2: Simplified Debts standing */}
-          <div className="bg-[var(--color-bg-card)] border border-[var(--color-border-card)] rounded-2xl p-5 shadow-lg flex flex-col min-h-[300px]">
-            <div className="flex items-center justify-between mb-4">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)]">Outstanding Debts</h4>
+          {/* Outstanding Debts */}
+          <div className="animate-fade-in hover-lift" style={{
+            padding: '24px', display: 'flex', flexDirection: 'column', minHeight: '340px',
+            background: 'rgba(13,13,28,0.9)', borderRadius: '14px',
+            border: '1px solid rgba(255,255,255,0.07)', position: 'relative', overflow: 'hidden',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.03) inset',
+            animationDelay: '100ms',
+          }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1.5px', background: 'linear-gradient(90deg, #f43f5e 0%, #f43f5e60 40%, transparent 100%)' }} />
+            {/* Section header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+              <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#3d4a5c' }}>
+                Outstanding Debts
+              </span>
               <button
                 onClick={() => navigate('/balances')}
-                className="text-[11px] text-[var(--color-accent)] hover:underline flex items-center gap-0.5 font-semibold cursor-pointer"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '3px',
+                  fontSize: '11px', fontWeight: 600, color: '#6366f1',
+                  background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                  transition: 'color 0.2s ease',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#818cf8')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#6366f1')}
               >
-                <span>Settle Debts</span>
-                <ChevronRight size={14} />
+                Settle Up <ChevronRight size={12} />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto space-y-3">
+            {/* List */}
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
               {isLoading ? (
-                <div className="py-8 flex justify-center">
-                  <div className="w-6 h-6 border-2 border-[var(--color-accent)]/20 border-t-[var(--color-accent)] rounded-full animate-spin" />
-                </div>
+                [...Array(5)].map((_, i) => (
+                  <div key={i} className="skeleton" style={{ height: '56px', borderRadius: '10px', animationDelay: `${i * 80}ms` }} />
+                ))
               ) : simplifiedDebts.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center py-12 text-center text-xs text-[var(--color-text-muted)]">
-                  <span>🎉</span>
-                  <p className="mt-1 font-medium">Group is completely settled up!</p>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '32px 0', textAlign: 'center' }}>
+                  <div style={{ fontSize: '32px', lineHeight: 1 }}>🎉</div>
+                  <p style={{ fontSize: '13px', fontWeight: 600, color: '#10b981' }}>All settled up!</p>
+                  <p style={{ fontSize: '11px', color: '#334155' }}>No outstanding debts in this group.</p>
                 </div>
               ) : (
-                simplifiedDebts.slice(0, 5).map((debt, index) => (
+                simplifiedDebts.slice(0, 7).map((debt, i) => (
                   <div
-                    key={index}
-                    className="p-3 bg-zinc-900/10 border border-[var(--color-border-card)]/30 rounded-xl flex items-center justify-between gap-4 text-xs hover:bg-zinc-800/10 transition-colors"
+                    key={i}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '12px',
+                      padding: '10px 12px', borderRadius: '10px',
+                      border: '1px solid transparent', transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = 'rgba(255,255,255,0.025)';
+                      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.04)';
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.borderColor = 'transparent';
+                    }}
                   >
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="font-semibold text-white truncate max-w-[120px]">{debt.fromName}</span>
-                      <span className="text-[10px] text-[var(--color-text-muted)]">pays</span>
-                      <span className="font-semibold text-white truncate max-w-[120px]">{debt.toName}</span>
+                    {/* From avatar */}
+                    <div style={{
+                      width: 32, height: 32, borderRadius: '9px',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '10px', fontWeight: 700, flexShrink: 0,
+                      background: 'linear-gradient(135deg, rgba(244,63,94,0.2), rgba(244,63,94,0.05))', color: '#f43f5e',
+                      border: '1px solid rgba(244,63,94,0.25)',
+                      fontFamily: 'system-ui', boxShadow: '0 2px 8px rgba(244,63,94,0.15)',
+                    }}>
+                      {debt.fromName?.substring(0, 2)?.toUpperCase()}
                     </div>
-                    <div className="font-bold text-[var(--color-accent)] font-mono shrink-0">
-                      ₹{Number(debt.amount).toFixed(2)}
+
+                    {/* Names */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
+                        <span style={{ fontWeight: 600, color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '80px' }}>
+                          {debt.fromName}
+                        </span>
+                        <ArrowRight size={11} style={{ color: '#475569', flexShrink: 0 }} />
+                        <span style={{ fontWeight: 600, color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '80px' }}>
+                          {debt.toName}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#475569', marginTop: '3px' }}>owes</div>
+                    </div>
+
+                    {/* Amount */}
+                    <div style={{ fontSize: '14px', fontWeight: 600, color: '#f43f5e', flexShrink: 0, fontFamily: "'JetBrains Mono', monospace" }}>
+                      ₹{Number(debt.amount).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                     </div>
                   </div>
                 ))

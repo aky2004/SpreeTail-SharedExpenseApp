@@ -167,11 +167,24 @@ async function resolveMemberName(
   );
   if (dbUserResult.rows.length > 0) {
     const user = dbUserResult.rows[0];
-    // Add user as member of this group
-    await client.query(
-      'INSERT INTO group_members (group_id, user_id, joined_at) VALUES ($1, $2, CURRENT_DATE)',
-      [groupId, user.id]
-    );
+    
+    // Check if they are already in the in-memory group members
+    const alreadyMember = groupMembers.find(m => m.user_id === user.id);
+    if (!alreadyMember) {
+      // Add user as member of this group
+      await client.query(
+        'INSERT INTO group_members (group_id, user_id, joined_at) VALUES ($1, $2, CURRENT_DATE)',
+        [groupId, user.id]
+      );
+      // Update in-memory array to prevent duplicate inserts from subsequent rows
+      groupMembers.push({
+        user_id: user.id,
+        user_name: user.name,
+        joined_at: new Date(),
+        left_at: null
+      });
+    }
+
     return {
       userId: user.id,
       userName: user.name,
@@ -193,6 +206,14 @@ async function resolveMemberName(
     'INSERT INTO group_members (group_id, user_id, joined_at) VALUES ($1, $2, CURRENT_DATE)',
     [groupId, newUser.id]
   );
+
+  // Update in-memory array to prevent duplicate inserts from subsequent rows
+  groupMembers.push({
+    user_id: newUser.id,
+    user_name: newUser.name,
+    joined_at: new Date(),
+    left_at: null
+  });
 
   return {
     userId: newUser.id,

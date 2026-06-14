@@ -12,8 +12,16 @@ import {
   ChevronDown,
   Plus,
   Users,
-  Wallet
 } from 'lucide-react';
+
+const navItems = [
+  { name: 'Dashboard',     path: '/dashboard',    icon: LayoutDashboard },
+  { name: 'Expenses',      path: '/expenses',      icon: Receipt },
+  { name: 'Balances',      path: '/balances',      icon: Scale },
+  { name: 'Settlements',   path: '/settlements',   icon: HandCoins },
+  { name: 'CSV Import',    path: '/import',        icon: FileSpreadsheet },
+  { name: 'Group Members', path: '/group-members', icon: Users },
+];
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
@@ -26,159 +34,226 @@ export default function Sidebar() {
     setIsDropdownOpen(false);
   };
 
-  const navItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { name: 'Expenses', path: '/expenses', icon: Receipt },
-    { name: 'Balances', path: '/balances', icon: Scale },
-    { name: 'Settlements', path: '/settlements', icon: HandCoins },
-    { name: 'CSV Import', path: '/import', icon: FileSpreadsheet },
-    { name: 'Group Members', path: '/group-members', icon: Users },
-  ];
+  const initials = (str: string) => str?.substring(0, 2)?.toUpperCase() ?? '??';
 
   return (
-    <aside className="w-65 h-screen bg-[var(--color-bg-sidebar)] border-r border-[var(--color-border-card)] flex flex-col justify-between select-none shrink-0 font-inter">
-      {/* Top Section */}
-      <div className="flex flex-col overflow-y-auto grow">
-        {/* Branding & Logo */}
-        <div className="p-6 flex items-center gap-3 border-b border-[var(--color-border-card)]">
-          <div className="p-2 bg-[var(--color-accent)]/10 rounded-lg text-[var(--color-accent)] shadow-[0_0_15px_rgba(0,180,166,0.15)] animate-pulse-subtle">
-            <Wallet size={22} />
+    <aside
+      style={{
+        width: '228px',
+        height: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        flexShrink: 0,
+        background: 'linear-gradient(180deg, #0a0a1a 0%, #07071200 100%), #080816',
+        borderRight: '1px solid rgba(255,255,255,0.05)',
+        userSelect: 'none',
+        overflow: 'hidden',
+      }}
+    >
+      {/* ── Logo / Brand ─────────────────────────────────── */}
+      <div style={{ padding: '22px 20px 18px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{
+            width: '32px', height: '32px', borderRadius: '9px',
+            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+            boxShadow: '0 4px 16px rgba(99,102,241,0.45)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontFamily: "'Geist', sans-serif", fontWeight: 700,
+            fontSize: '12px', color: 'white', letterSpacing: '-0.02em', flexShrink: 0,
+          }}>
+            ST
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-wider text-white">
-              EXP<span className="text-[var(--color-accent)]">ensio</span>
-            </h1>
-            <p className="text-[10px] text-[var(--color-text-muted)] tracking-widest uppercase">
-              Shared Expense App
-            </p>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: 'white', letterSpacing: '-0.02em', lineHeight: 1 }}>
+              Spree<span style={{ color: '#818cf8' }}>Tail</span>
+            </div>
+            <div style={{ fontSize: '9px', fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#2d3748', marginTop: '3px' }}>
+              Shared Finance
+            </div>
           </div>
         </div>
+      </div>
 
-        {/* Group Switcher */}
-        <div className="p-4 border-b border-[var(--color-border-card)] relative">
-          <label className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] block mb-1.5 px-2">
-            Active Group
-          </label>
-          {currentGroup ? (
-            <button
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="w-full flex items-center justify-between gap-3 px-3 py-2 bg-[var(--color-bg-card)] hover:bg-[var(--color-bg-card-hover)] border border-[var(--color-border-card)] rounded-xl text-left cursor-pointer transition-all duration-200"
-            >
-              <div className="flex items-center gap-2.5 overflow-hidden">
-                <div className="w-8 h-8 rounded-lg bg-[var(--color-accent)]/15 text-[var(--color-accent)] flex items-center justify-center font-bold font-mono text-sm shrink-0 uppercase">
-                  {currentGroup.name.substring(0, 2)}
-                </div>
-                <div className="overflow-hidden">
-                  <div className="text-sm font-semibold text-white truncate leading-tight">
-                    {currentGroup.name}
-                  </div>
-                  <div className="text-[10px] text-[var(--color-text-muted)]">
-                    Code: {currentGroup.invite_code}
-                  </div>
-                </div>
-              </div>
-              <ChevronDown size={16} className={`text-[var(--color-text-muted)] transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
-            </button>
-          ) : (
-            <button
-              onClick={() => navigate('/onboarding')}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-semibold rounded-xl text-sm transition-all duration-200 cursor-pointer shadow-[0_4px_12px_rgba(0,180,166,0.2)]"
-            >
-              <Plus size={16} />
-              <span>Create / Join Group</span>
-            </button>
-          )}
+      {/* ── Divider ──────────────────────────────────────── */}
+      <div style={{ height: '1px', background: 'rgba(255,255,255,0.04)', margin: '0 16px' }} />
 
-          {/* Group Switcher Dropdown */}
-          {isDropdownOpen && (
-            <div className="absolute top-[calc(100%-4px)] left-4 right-4 z-50 bg-[var(--color-bg-card)] border border-[var(--color-border-card)] rounded-xl shadow-[0_10px_25px_rgba(0,0,0,0.5)] py-2 mt-1 max-h-60 overflow-y-auto animate-fade-in">
-              {groups.map((group) => (
-                <button
-                  key={group.id}
-                  onClick={() => handleGroupSelect(group)}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-[var(--color-bg-card-hover)] transition-colors duration-150 cursor-pointer ${
-                    currentGroup?.id === group.id ? 'bg-[var(--color-accent)]/5 border-l-3 border-[var(--color-accent)]' : 'border-l-3 border-transparent'
-                  }`}
-                >
-                  <div className="w-7 h-7 rounded bg-[var(--color-accent)]/10 text-[var(--color-accent)] flex items-center justify-center font-bold text-xs uppercase shrink-0">
-                    {group.name.substring(0, 2)}
-                  </div>
-                  <div className="overflow-hidden">
-                    <div className="text-xs font-semibold text-white truncate">
-                      {group.name}
-                    </div>
-                    <div className="text-[9px] text-[var(--color-text-muted)]">
-                      Code: {group.invite_code}
-                    </div>
-                  </div>
-                </button>
-              ))}
-              <div className="border-t border-[var(--color-border-card)] mt-2 pt-2 px-2">
-                <button
-                  onClick={() => {
-                    setIsDropdownOpen(false);
-                    navigate('/onboarding');
-                  }}
-                  className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium text-[var(--color-accent)] hover:text-white hover:bg-[var(--color-accent)]/10 rounded-lg transition-all duration-200 cursor-pointer"
-                >
-                  <Plus size={14} />
-                  <span>New Group Flow</span>
-                </button>
-              </div>
-            </div>
-          )}
+      {/* ── Workspace / Group Switcher ───────────────────── */}
+      <div style={{ padding: '16px 12px 8px', position: 'relative' }}>
+        <div style={{ fontSize: '9.5px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#2d3748', paddingLeft: '8px', marginBottom: '8px' }}>
+          Workspace
         </div>
 
-        {/* Navigation Items */}
-        <nav className="flex-1 px-3 py-4 space-y-1">
+        {currentGroup ? (
+          <>
+            <button
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '9px 10px', borderRadius: '10px', cursor: 'pointer',
+                background: isDropdownOpen ? 'rgba(99,102,241,0.1)' : 'rgba(255,255,255,0.03)',
+                border: `1px solid ${isDropdownOpen ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.06)'}`,
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <div style={{
+                width: '26px', height: '26px', borderRadius: '7px', flexShrink: 0,
+                background: 'linear-gradient(135deg, rgba(99,102,241,0.3), rgba(139,92,246,0.3))',
+                border: '1px solid rgba(99,102,241,0.25)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '9px', fontWeight: 700, color: '#a5b4fc',
+              }}>
+                {initials(currentGroup.name)}
+              </div>
+              <div style={{ flex: 1, overflow: 'hidden', textAlign: 'left' }}>
+                <div style={{ fontSize: '12px', fontWeight: 600, color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.2 }}>
+                  {currentGroup.name}
+                </div>
+                <div style={{ fontSize: '9px', fontFamily: 'monospace', color: '#475569', marginTop: '2px' }}>
+                  #{currentGroup.invite_code}
+                </div>
+              </div>
+              <ChevronDown
+                size={13}
+                style={{ color: '#475569', flexShrink: 0, transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s ease' }}
+              />
+            </button>
+
+            {/* Dropdown */}
+            {isDropdownOpen && (
+              <div
+                style={{
+                  position: 'absolute', top: 'calc(100% - 4px)', left: '12px', right: '12px', zIndex: 50,
+                  background: '#0d0d20', border: '1px solid rgba(99,102,241,0.18)',
+                  borderRadius: '12px', overflow: 'hidden',
+                  boxShadow: '0 20px 60px rgba(0,0,0,0.7)',
+                  animation: 'scaleIn 0.18s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                }}
+              >
+                <div style={{ padding: '6px' }}>
+                  {groups.map((group) => (
+                    <button
+                      key={group.id}
+                      onClick={() => handleGroupSelect(group)}
+                      style={{
+                        width: '100%', display: 'flex', alignItems: 'center', gap: '9px',
+                        padding: '8px 10px', borderRadius: '8px', cursor: 'pointer',
+                        background: currentGroup?.id === group.id ? 'rgba(99,102,241,0.1)' : 'transparent',
+                        border: 'none', textAlign: 'left', transition: 'background 0.12s ease',
+                        borderLeft: currentGroup?.id === group.id ? '2px solid #6366f1' : '2px solid transparent',
+                      }}
+                      onMouseEnter={e => { if (currentGroup?.id !== group.id) e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
+                      onMouseLeave={e => { if (currentGroup?.id !== group.id) e.currentTarget.style.background = 'transparent'; }}
+                    >
+                      <div style={{ width: '22px', height: '22px', borderRadius: '6px', flexShrink: 0, background: 'rgba(99,102,241,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8.5px', fontWeight: 700, color: '#818cf8' }}>
+                        {initials(group.name)}
+                      </div>
+                      <div style={{ overflow: 'hidden' }}>
+                        <div style={{ fontSize: '11.5px', fontWeight: 600, color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{group.name}</div>
+                        <div style={{ fontSize: '9px', fontFamily: 'monospace', color: '#475569' }}>#{group.invite_code}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '0 6px' }} />
+                <div style={{ padding: '6px' }}>
+                  <button
+                    onClick={() => { setIsDropdownOpen(false); navigate('/onboarding'); }}
+                    style={{
+                      width: '100%', display: 'flex', alignItems: 'center', gap: '7px',
+                      padding: '7px 10px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                      fontSize: '11px', fontWeight: 500, color: '#6366f1', background: 'transparent',
+                      transition: 'background 0.12s ease',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.08)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <Plus size={12} />
+                    New Group
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <button
+            onClick={() => navigate('/onboarding')}
+            className="btn-primary"
+            style={{ width: '100%', fontSize: '12px', padding: '9px 14px' }}
+          >
+            <Plus size={13} />
+            Create / Join Group
+          </button>
+        )}
+      </div>
+
+      {/* ── Navigation ───────────────────────────────────── */}
+      <nav style={{ flex: 1, padding: '8px 12px', overflowY: 'auto' }}>
+        <div style={{ fontSize: '9.5px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#2d3748', paddingLeft: '8px', marginBottom: '6px', marginTop: '4px' }}>
+          Navigation
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
           {navItems.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
-                  isActive
-                    ? 'bg-[var(--color-accent)]/10 text-[var(--color-accent)] shadow-[inset_0_0_8px_rgba(0,180,166,0.05)] font-semibold'
-                    : 'text-[var(--color-text-muted)] hover:text-white hover:bg-[var(--color-bg-card-hover)]'
-                }`
-              }
+              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
             >
               {({ isActive }) => (
                 <>
-                  <item.icon size={18} className={isActive ? 'text-[var(--color-accent)]' : ''} />
-                  <span>{item.name}</span>
+                  <item.icon
+                    size={15}
+                    style={{ color: isActive ? '#818cf8' : '#3d4a5c', flexShrink: 0 }}
+                  />
+                  <span style={{ fontSize: '13px' }}>{item.name}</span>
                 </>
               )}
             </NavLink>
           ))}
-        </nav>
-      </div>
+        </div>
+      </nav>
 
-      {/* Bottom User Profile + Logout */}
-      <div className="p-4 border-t border-[var(--color-border-card)]">
+      {/* ── User Profile ─────────────────────────────────── */}
+      <div style={{ padding: '12px', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
         {user && (
-          <div className="flex items-center justify-between gap-2.5 mb-3 px-1">
-            <div className="flex items-center gap-2.5 overflow-hidden">
-              <div className="w-9 h-9 rounded-full bg-[var(--color-accent)]/15 text-[var(--color-accent)] flex items-center justify-center font-bold text-sm shrink-0 border border-[var(--color-accent)]/20 uppercase shadow-[0_0_10px_rgba(0,180,166,0.1)]">
-                {user.name.substring(0, 2)}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '9px',
+            padding: '9px 10px', borderRadius: '10px',
+            background: 'rgba(255,255,255,0.025)',
+            border: '1px solid rgba(255,255,255,0.05)',
+            marginBottom: '6px',
+          }}>
+            <div style={{
+              width: '30px', height: '30px', borderRadius: '50%', flexShrink: 0,
+              background: 'linear-gradient(135deg, rgba(99,102,241,0.35), rgba(139,92,246,0.35))',
+              border: '1.5px solid rgba(99,102,241,0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '10px', fontWeight: 700, color: '#a5b4fc',
+            }}>
+              {initials(user.name)}
+            </div>
+            <div style={{ overflow: 'hidden', flex: 1 }}>
+              <div style={{ fontSize: '12.5px', fontWeight: 600, color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.2 }}>
+                {user.name}
               </div>
-              <div className="overflow-hidden">
-                <div className="text-sm font-semibold text-white truncate leading-tight">
-                  {user.name}
-                </div>
-                <div className="text-[10px] text-[var(--color-text-muted)] truncate">
-                  {user.email}
-                </div>
+              <div style={{ fontSize: '9.5px', color: '#3d4a5c', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>
+                {user.email}
               </div>
             </div>
           </div>
         )}
         <button
           onClick={logout}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 border border-[var(--color-border-card)] hover:border-red-500/30 hover:bg-red-500/5 text-[var(--color-text-muted)] hover:text-red-400 rounded-xl text-xs font-semibold cursor-pointer transition-all duration-200"
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', gap: '8px',
+            padding: '8px 10px', borderRadius: '9px', border: 'none', cursor: 'pointer',
+            fontSize: '12px', fontWeight: 500, color: '#3d4a5c', background: 'transparent',
+            transition: 'all 0.15s ease',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(244,63,94,0.08)'; e.currentTarget.style.color = '#f43f5e'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#3d4a5c'; }}
         >
-          <LogOut size={14} />
-          <span>Sign Out</span>
+          <LogOut size={13} />
+          Sign Out
         </button>
       </div>
     </aside>

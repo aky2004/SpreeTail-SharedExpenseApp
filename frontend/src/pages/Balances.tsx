@@ -152,44 +152,56 @@ export default function Balances() {
 
   return (
     <MainLayout>
-      <div className="p-8 max-w-6xl mx-auto w-full flex-1 flex flex-col min-h-0 animate-fade-in">
+      <div className="animate-fade-in flex-1 flex flex-col min-h-0" style={{ padding: '28px 32px', maxWidth: '1440px', margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 shrink-0">
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-8 shrink-0">
           <div>
-            <h1 className="text-3xl font-bold text-white tracking-tight">Balances & Debts</h1>
-            <p className="text-sm text-[var(--color-text-muted)] mt-1">
-              Who owes whom, net group standing, and hand-traced expense drilldowns.
+            <div className="flex items-center gap-2.5 mb-2.5">
+              <span className="section-label">Balances</span>
+              <div style={{ width: '3px', height: '3px', borderRadius: '50%', background: '#334155' }} />
+              <span className="section-label" style={{ color: '#6366f1' }}>{currentGroup.name}</span>
+            </div>
+            <h1 className="page-title">Balances &amp; Debts</h1>
+            <p className="text-[13px] mt-1" style={{ color: '#475569' }}>
+              Who owes whom, net group standing, and expense drilldowns.
             </p>
           </div>
-          <button
-            onClick={() => handleOpenSettle()}
-            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-semibold rounded-xl text-sm transition-all duration-200 cursor-pointer shadow-[0_4px_12px_rgba(0,180,166,0.2)] hover:-translate-y-0.5"
-          >
-            <HandCoins size={16} />
+          <button onClick={() => handleOpenSettle()} className="btn-primary">
+            <HandCoins size={15} />
             <span>Record Payment</span>
           </button>
         </div>
 
         {error && (
-          <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl mb-6 text-sm shrink-0">
+          <div
+            className="flex items-center gap-3 p-4 rounded-2xl mb-6 text-[13px]"
+            style={{ background: 'rgba(244,63,94,0.08)', border: '1px solid rgba(244,63,94,0.2)', color: '#f43f5e' }}
+          >
             ⚠️ {error}
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
-          {/* Column 1: Net Balances Summary */}
-          <div className="bg-[var(--color-bg-card)] border border-[var(--color-border-card)] rounded-2xl p-6 shadow-xl flex flex-col min-h-0">
-            <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2 shrink-0">
-              <Scale className="text-[var(--color-accent)]" size={18} />
-              <span>Net Balances</span>
-            </h2>
-            <div className="flex-1 overflow-y-auto pr-1 space-y-3">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0 stagger">
+          {/* Column 1: Net Balances */}
+          <div className="animate-fade-in hover-lift" style={{
+            padding: '24px', display: 'flex', flexDirection: 'column', minHeight: '0',
+            background: 'rgba(13,13,28,0.9)', borderRadius: '14px',
+            border: '1px solid rgba(255,255,255,0.07)', position: 'relative', overflow: 'hidden',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.03) inset',
+          }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1.5px', background: 'linear-gradient(90deg, #6366f1 0%, #6366f160 40%, transparent 100%)' }} />
+            <div className="section-label mb-5 flex items-center gap-2">
+              <Scale size={13} style={{ color: '#6366f1' }} />
+              Net Balances
+            </div>
+            <div className="flex-1 overflow-y-auto space-y-2">
               {isLoading ? (
                 <div className="py-8 flex justify-center">
-                  <div className="w-6 h-6 border-2 border-[var(--color-accent)]/20 border-t-[var(--color-accent)] rounded-full animate-spin" />
+                  <div className="w-6 h-6 rounded-full border-2 animate-spin"
+                    style={{ borderColor: 'rgba(99,102,241,0.2)', borderTopColor: '#6366f1' }} />
                 </div>
               ) : netBalances.length === 0 ? (
-                <p className="text-xs text-[var(--color-text-muted)] text-center py-8">Everyone is fully settled up!</p>
+                <p className="text-[12px] text-center py-8" style={{ color: '#334155' }}>Everyone is fully settled up!</p>
               ) : (
                 netBalances.map((item) => {
                   const isOwed = item.amount > 0;
@@ -197,27 +209,40 @@ export default function Balances() {
                     <button
                       key={item.userId}
                       onClick={() => handleMemberClick(item)}
-                      className={`w-full flex items-center justify-between p-3.5 bg-zinc-900/15 hover:bg-zinc-800/20 rounded-xl border border-transparent hover:border-[var(--color-border-card)] text-left cursor-pointer transition-all duration-200 ${
-                        selectedMember?.userId === item.userId ? 'bg-zinc-800/40 border-[var(--color-border-card)] shadow-md' : ''
-                      }`}
+                      className="w-full flex items-center justify-between p-3 rounded-xl text-left cursor-pointer transition-all"
+                      style={{
+                        background: selectedMember?.userId === item.userId
+                          ? 'rgba(99,102,241,0.08)'
+                          : 'rgba(255,255,255,0.025)',
+                        border: selectedMember?.userId === item.userId
+                          ? '1px solid rgba(99,102,241,0.25)'
+                          : '1px solid rgba(255,255,255,0.04)',
+                      }}
                     >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs uppercase border ${
-                          isOwed
-                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25'
-                            : 'bg-rose-500/10 text-rose-400 border-rose-500/25'
-                        }`}>
+                      <div className="flex items-center gap-2.5">
+                        <div
+                          className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-[11px] uppercase shrink-0"
+                          style={{
+                            background: isOwed ? 'linear-gradient(135deg, rgba(16,185,129,0.2), rgba(16,185,129,0.05))' : 'linear-gradient(135deg, rgba(244,63,94,0.2), rgba(244,63,94,0.05))',
+                            border: isOwed ? '1px solid rgba(16,185,129,0.25)' : '1px solid rgba(244,63,94,0.25)',
+                            color: isOwed ? '#10b981' : '#f43f5e',
+                            boxShadow: isOwed ? '0 2px 8px rgba(16,185,129,0.15)' : '0 2px 8px rgba(244,63,94,0.15)',
+                          }}
+                        >
                           {item.userName.substring(0, 2)}
                         </div>
                         <div>
-                          <div className="text-xs font-semibold text-white">{item.userName}</div>
-                          <div className="text-[10px] text-[var(--color-text-muted)] mt-0.5">
+                          <div className="text-[12.5px] font-semibold text-white">{item.userName}</div>
+                          <div className="text-[10px] mt-0.5" style={{ color: '#475569' }}>
                             {isOwed ? 'is owed money' : 'owes money'}
                           </div>
                         </div>
                       </div>
-                      <div className={`text-xs font-bold font-mono ${isOwed ? 'text-emerald-400' : 'text-rose-400'}`}>
-                        {isOwed ? '+' : ''}₹{Math.abs(item.amount).toFixed(2)}
+                      <div
+                        className="mono text-[13px] font-semibold shrink-0"
+                        style={{ color: isOwed ? '#10b981' : '#f43f5e' }}
+                      >
+                        {isOwed ? '+' : ''}₹{Math.abs(item.amount).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                       </div>
                     </button>
                   );
@@ -226,43 +251,66 @@ export default function Balances() {
             </div>
           </div>
 
-          {/* Column 2: Simplified Debts (Aisha's View) */}
-          <div className="bg-[var(--color-bg-card)] border border-[var(--color-border-card)] rounded-2xl p-6 shadow-xl flex flex-col min-h-0">
-            <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2 shrink-0">
-              <HandCoins className="text-[var(--color-accent)]" size={18} />
-              <span>Simplified Debts</span>
-            </h2>
-            <div className="flex-1 overflow-y-auto pr-1 space-y-3">
+          {/* Column 2: Simplified Debts */}
+          <div className="animate-fade-in hover-lift" style={{
+            padding: '24px', display: 'flex', flexDirection: 'column', minHeight: '0',
+            background: 'rgba(13,13,28,0.9)', borderRadius: '14px',
+            border: '1px solid rgba(255,255,255,0.07)', position: 'relative', overflow: 'hidden',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.03) inset',
+            animationDelay: '60ms',
+          }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1.5px', background: 'linear-gradient(90deg, #10b981 0%, #10b98160 40%, transparent 100%)' }} />
+            <div className="section-label mb-5 flex items-center gap-2">
+              <HandCoins size={13} style={{ color: '#6366f1' }} />
+              Simplified Debts
+            </div>
+            <div className="flex-1 overflow-y-auto space-y-2">
               {isLoading ? (
                 <div className="py-8 flex justify-center">
-                  <div className="w-6 h-6 border-2 border-[var(--color-accent)]/20 border-t-[var(--color-accent)] rounded-full animate-spin" />
+                  <div className="w-6 h-6 rounded-full border-2 animate-spin"
+                    style={{ borderColor: 'rgba(99,102,241,0.2)', borderTopColor: '#6366f1' }} />
                 </div>
               ) : simplifiedDebts.length === 0 ? (
                 <div className="text-center py-12">
-                  <span className="text-2xl">🎉</span>
-                  <h3 className="text-xs font-semibold text-white mt-2">All settled up!</h3>
-                  <p className="text-[10px] text-[var(--color-text-muted)] mt-1">No outstanding balances to simplify.</p>
+                  <span className="text-3xl">🎉</span>
+                  <h3 className="text-[13px] font-semibold text-white mt-3">All settled up!</h3>
+                  <p className="text-[11px] mt-1" style={{ color: '#334155' }}>No outstanding balances to simplify.</p>
                 </div>
               ) : (
                 simplifiedDebts.map((debt, index) => (
                   <div
                     key={index}
-                    className="p-3.5 bg-zinc-900/15 border border-[var(--color-border-card)]/50 rounded-xl flex items-center justify-between gap-2 hover:bg-zinc-800/10 transition-colors"
+                    className="p-3.5 rounded-xl flex items-center justify-between gap-2 transition-colors"
+                    style={{ border: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.02)' }}
                   >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="min-w-0">
-                        <span className="text-xs font-semibold text-white truncate block">{debt.fromName}</span>
-                        <span className="text-[10px] text-[var(--color-text-muted)] block mt-0.5">pays</span>
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <div
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0"
+                        style={{ background: 'linear-gradient(135deg, rgba(244,63,94,0.2), rgba(244,63,94,0.05))', color: '#f43f5e', border: '1px solid rgba(244,63,94,0.2)', boxShadow: '0 2px 8px rgba(244,63,94,0.15)' }}
+                      >
+                        {debt.fromName?.substring(0, 2)?.toUpperCase()}
                       </div>
-                      <ArrowRight size={14} className="text-[var(--color-text-muted)] shrink-0" />
-                      <div className="min-w-0">
-                        <span className="text-xs font-semibold text-white truncate block">{debt.toName}</span>
-                        <span className="text-[10px] text-[var(--color-accent)] block mt-0.5">₹{Number(debt.amount).toFixed(2)}</span>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[12px] font-semibold text-white flex items-center gap-1.5 flex-wrap">
+                          <span className="truncate max-w-[80px]">{debt.fromName}</span>
+                          <span style={{ color: '#334155' }}>→</span>
+                          <span className="truncate max-w-[80px]">{debt.toName}</span>
+                        </div>
+                        <div className="mono text-[11px] font-semibold mt-0.5" style={{ color: '#f43f5e' }}>
+                          ₹{Number(debt.amount).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                        </div>
                       </div>
                     </div>
                     <button
                       onClick={() => handleOpenSettle(debt)}
-                      className="px-2.5 py-1.5 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-bold rounded-lg text-[10px] uppercase tracking-wider shrink-0 transition-colors cursor-pointer"
+                      className="px-3 py-1.5 font-semibold rounded-xl text-[11px] shrink-0 cursor-pointer transition-all"
+                      style={{
+                        background: 'rgba(99,102,241,0.12)',
+                        border: '1px solid rgba(99,102,241,0.25)',
+                        color: '#a5b4fc',
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.background = '#6366f1'; e.currentTarget.style.color = 'white'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(99,102,241,0.12)'; e.currentTarget.style.color = '#a5b4fc'; }}
                     >
                       Settle
                     </button>
@@ -272,58 +320,68 @@ export default function Balances() {
             </div>
           </div>
 
-          {/* Column 3: Member Drilldown (Rohan's View) */}
-          <div className="bg-[var(--color-bg-card)] border border-[var(--color-border-card)] rounded-2xl p-6 shadow-xl flex flex-col min-h-0">
-            <h2 className="text-lg font-bold text-white mb-1.5 flex items-center gap-2 shrink-0">
-              <FileText className="text-[var(--color-accent)]" size={18} />
-              <span>Balance Drilldown</span>
-            </h2>
-            <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider shrink-0 mb-4">
-              Select a member on the left to trace bills
-            </p>
-            
-            <div className="flex-1 overflow-y-auto pr-1">
+          {/* Column 3: Member Drilldown */}
+          <div className="animate-fade-in hover-lift" style={{
+            padding: '24px', display: 'flex', flexDirection: 'column', minHeight: '0',
+            background: 'rgba(13,13,28,0.9)', borderRadius: '14px',
+            border: '1px solid rgba(255,255,255,0.07)', position: 'relative', overflow: 'hidden',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.03) inset',
+            animationDelay: '120ms',
+          }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1.5px', background: 'linear-gradient(90deg, #3b82f6 0%, #3b82f660 40%, transparent 100%)' }} />
+            <div className="section-label mb-1 flex items-center gap-2">
+              <FileText size={13} style={{ color: '#6366f1' }} />
+              Balance Drilldown
+            </div>
+            <p className="text-[10px] mb-5 mt-1" style={{ color: '#334155' }}>Select a member to trace their bills</p>
+
+            <div className="flex-1 overflow-y-auto">
               {isDrilldownLoading ? (
                 <div className="py-12 flex justify-center">
-                  <div className="w-6 h-6 border-2 border-[var(--color-accent)]/20 border-t-[var(--color-accent)] rounded-full animate-spin" />
+                  <div className="w-6 h-6 rounded-full border-2 animate-spin"
+                    style={{ borderColor: 'rgba(99,102,241,0.2)', borderTopColor: '#6366f1' }} />
                 </div>
               ) : !selectedMember ? (
-                <div className="text-center py-16 text-zinc-500">
-                  <Info size={20} className="mx-auto mb-2 text-zinc-600" />
-                  <p className="text-xs">Select any flatmate to trace their ledger step-by-step.</p>
+                <div className="text-center py-16" style={{ color: '#334155' }}>
+                  <Info size={20} className="mx-auto mb-2" />
+                  <p className="text-[12px]">Select any flatmate to trace their ledger step-by-step.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {/* Ledger Header */}
-                  <div className="p-4 bg-[var(--color-bg-sidebar)] border border-[var(--color-border-card)] rounded-xl flex items-center justify-between">
+                  <div
+                    className="p-4 rounded-xl flex items-center justify-between"
+                    style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)' }}
+                  >
                     <div>
-                      <h4 className="text-sm font-bold text-white">{selectedMember.userName}</h4>
-                      <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">Cumulative Group Standing</p>
+                      <h4 className="text-[13px] font-bold text-white">{selectedMember.userName}</h4>
+                      <p className="text-[10px] mt-0.5" style={{ color: '#475569' }}>Cumulative Group Standing</p>
                     </div>
-                    <div className={`text-base font-extrabold font-mono ${drilldownTotal >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                      {drilldownTotal >= 0 ? '+' : ''}₹{drilldownTotal.toFixed(2)}
+                    <div
+                      className="mono text-[15px] font-semibold"
+                      style={{ color: drilldownTotal >= 0 ? '#10b981' : '#f43f5e' }}
+                    >
+                      {drilldownTotal >= 0 ? '+' : ''}₹{drilldownTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                     </div>
                   </div>
 
                   {/* Ledger Items */}
-                  <div className="space-y-2.5">
+                  <div className="space-y-2">
                     {drilldownData.length === 0 ? (
-                      <p className="text-xs text-[var(--color-text-muted)] text-center py-6">No bills linked to this member.</p>
+                      <p className="text-[12px] text-center py-6" style={{ color: '#334155' }}>No bills linked to this member.</p>
                     ) : (
                       drilldownData.map((item, idx) => {
                         const isPayer = item.paid_by_user_id === selectedMember.userId;
                         const dateStr = new Date(item.expense_date).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          timeZone: 'UTC'
+                          month: 'short', day: 'numeric', timeZone: 'UTC'
                         });
-
                         return (
                           <div
                             key={idx}
-                            className="p-3 bg-zinc-900/10 border border-[var(--color-border-card)]/30 rounded-xl text-xs space-y-1.5 hover:bg-zinc-800/10 transition-colors"
+                            className="p-3 rounded-xl text-xs space-y-1.5 transition-colors"
+                            style={{ border: '1px solid rgba(255,255,255,0.04)', background: 'rgba(255,255,255,0.02)' }}
                           >
-                            <div className="flex items-center justify-between text-[10px] text-[var(--color-text-muted)] font-mono">
+                            <div className="flex items-center justify-between" style={{ color: '#475569', fontSize: '10px', fontFamily: 'monospace' }}>
                               <span className="flex items-center gap-1">
                                 <Calendar size={11} /> {dateStr}
                               </span>
@@ -331,21 +389,24 @@ export default function Balances() {
                             </div>
                             <div className="flex items-center justify-between gap-2">
                               <span className="font-semibold text-white truncate max-w-[150px]">{item.description}</span>
-                              <span className={`font-semibold font-mono ${item.net_effect >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                              <span
+                                className="mono font-semibold shrink-0"
+                                style={{ color: item.net_effect >= 0 ? '#10b981' : '#f43f5e' }}
+                              >
                                 {item.net_effect >= 0 ? '+' : ''}₹{item.net_effect.toFixed(2)}
                               </span>
                             </div>
-                            <div className="flex items-center justify-between text-[10px] text-[var(--color-text-muted)] border-t border-[var(--color-border-card)]/30 pt-1.5 mt-1">
+                            <div
+                              className="flex items-center justify-between pt-1.5 mt-1"
+                              style={{ borderTop: '1px solid rgba(255,255,255,0.04)', color: '#475569', fontSize: '10px' }}
+                            >
                               <div>
-                                {isPayer ? (
-                                  <span>Paid <strong>₹{Number(item.amount_inr).toFixed(2)}</strong></span>
-                                ) : (
-                                  <span>Payer: <strong>{item.paid_by_name}</strong></span>
-                                )}
+                                {isPayer
+                                  ? <span>Paid <strong className="text-white">₹{Number(item.amount_inr).toFixed(2)}</strong></span>
+                                  : <span>Payer: <strong className="text-white">{item.paid_by_name}</strong></span>
+                                }
                               </div>
-                              <div>
-                                <span>Owed <strong>₹{Number(item.my_share).toFixed(2)}</strong></span>
-                              </div>
+                              <div><span>Owed <strong className="text-white">₹{Number(item.my_share).toFixed(2)}</strong></span></div>
                             </div>
                           </div>
                         );
@@ -360,23 +421,42 @@ export default function Balances() {
 
         {/* Settlement Modal */}
         {isSettleOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-            <div className="bg-[var(--color-bg-card)] border border-[var(--color-border-card)] w-full max-w-md rounded-2xl shadow-2xl p-6 animate-scale-in">
-              <div className="flex items-center justify-between border-b border-[var(--color-border-card)] pb-4 mb-5">
-                <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <HandCoins className="text-[var(--color-accent)]" size={20} />
+          <div className="modal-backdrop animate-fade-in">
+            <div
+              className="animate-scale-in w-full max-w-md p-8 relative overflow-hidden"
+              style={{
+                background: 'rgba(13, 13, 28, 0.95)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: '16px',
+                boxShadow: '0 32px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.03) inset',
+                backdropFilter: 'blur(30px)',
+              }}
+            >
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, #10b981 0%, #3b82f6 100%)' }} />
+
+              <div className="flex items-center justify-between pb-5 mb-6" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <h2 className="text-[17px] font-bold text-white flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'rgba(99,102,241,0.15)' }}>
+                    <HandCoins size={16} style={{ color: '#818cf8' }} />
+                  </div>
                   <span>Record Payment</span>
                 </h2>
                 <button
                   onClick={() => setIsSettleOpen(false)}
-                  className="p-1 hover:bg-zinc-800 text-[var(--color-text-muted)] hover:text-white rounded-lg transition-colors cursor-pointer"
+                  className="p-1.5 rounded-xl cursor-pointer transition-colors"
+                  style={{ color: '#475569' }}
+                  onMouseEnter={e => { e.currentTarget.style.color = 'white'; e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.color = '#475569'; e.currentTarget.style.background = 'transparent'; }}
                 >
                   <X size={18} />
                 </button>
               </div>
 
               {settleError && (
-                <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl mb-4 text-xs">
+                <div
+                  className="flex items-center gap-2.5 p-3.5 rounded-xl mb-4 text-[12px]"
+                  style={{ background: 'rgba(244,63,94,0.08)', border: '1px solid rgba(244,63,94,0.2)', color: '#f43f5e' }}
+                >
                   ⚠️ {settleError}
                 </div>
               )}
@@ -451,19 +531,18 @@ export default function Balances() {
                   />
                 </div>
 
-                {/* Submit buttons */}
                 <div className="flex gap-3 pt-2">
                   <button
                     type="button"
                     onClick={() => setIsSettleOpen(false)}
-                    className="flex-1 py-2.5 border border-[var(--color-border-card)] hover:bg-[var(--color-bg-card-hover)] text-white font-semibold rounded-xl text-sm cursor-pointer transition-all"
+                    className="btn-ghost flex-1 py-3"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={isSubmittingSettle}
-                    className="flex-1 py-2.5 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] disabled:bg-[var(--color-accent)]/50 text-white font-semibold rounded-xl text-sm cursor-pointer transition-all shadow-[0_4px_12px_rgba(0,180,166,0.2)]"
+                    className="btn-primary flex-1 py-3"
                   >
                     {isSubmittingSettle ? 'Saving...' : 'Record Payment'}
                   </button>

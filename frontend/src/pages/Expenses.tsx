@@ -15,7 +15,7 @@ import {
 export default function Expenses() {
   const { currentGroup } = useGroup();
   const { user } = useAuth();
-  
+
   // Data states
   const [expenses, setExpenses] = useState<any[]>([]);
   const [activeMembers, setActiveMembers] = useState<any[]>([]);
@@ -270,32 +270,46 @@ export default function Expenses() {
 
   return (
     <MainLayout>
-      <div className="p-8 max-w-6xl mx-auto w-full flex-1 flex flex-col min-h-0 animate-fade-in">
+      <div className="animate-fade-in flex-1 flex flex-col min-h-0" style={{ padding: '28px 32px', maxWidth: '1440px', margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 shrink-0">
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-8 shrink-0">
           <div>
-            <h1 className="text-3xl font-bold text-white tracking-tight">Group Expenses</h1>
-            <p className="text-sm text-[var(--color-text-muted)] mt-1">
-              Add and view shared bills. Conversions are calculated automatically.
+            <div className="flex items-center gap-2.5 mb-2.5">
+              <span className="section-label">Expenses</span>
+              <div style={{ width: '3px', height: '3px', borderRadius: '50%', background: '#334155' }} />
+              <span className="section-label" style={{ color: '#6366f1' }}>{currentGroup.name}</span>
+            </div>
+            <h1 className="page-title">Group Bills</h1>
+            <p className="text-[13px] mt-1" style={{ color: '#475569' }}>
+              Track and manage all shared expenses. Click any row for details.
             </p>
           </div>
           <button
             onClick={() => setIsFormOpen(true)}
-            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-semibold rounded-xl text-sm transition-all duration-200 cursor-pointer shadow-[0_4px_12px_rgba(0,180,166,0.2)] hover:-translate-y-0.5"
+            className="btn-primary"
           >
-            <Plus size={16} />
+            <Plus size={15} />
             <span>Add Expense</span>
           </button>
         </div>
 
         {error && (
-          <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl mb-6 text-sm shrink-0">
+          <div
+            className="flex items-center gap-3 p-4 rounded-2xl mb-6 text-[13px]"
+            style={{ background: 'rgba(244,63,94,0.08)', border: '1px solid rgba(244,63,94,0.2)', color: '#f43f5e' }}
+          >
             ⚠️ {error}
           </div>
         )}
 
         {/* Expenses Table */}
-        <div className="bg-[var(--color-bg-card)] border border-[var(--color-border-card)] rounded-2xl overflow-hidden shadow-xl flex-1 flex flex-col min-h-0">
+        <div className="animate-fade-in hover-lift" style={{
+          background: 'rgba(13,13,28,0.9)', borderRadius: '14px',
+          border: '1px solid rgba(255,255,255,0.07)', position: 'relative', overflow: 'hidden',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.03) inset',
+          display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0
+        }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1.5px', background: 'linear-gradient(90deg, #8b5cf6 0%, #8b5cf660 40%, transparent 100%)', zIndex: 20 }} />
           <div className="overflow-y-auto flex-1">
             {isLoading ? (
               <div className="p-12 flex justify-center">
@@ -312,9 +326,9 @@ export default function Expenses() {
                 </p>
               </div>
             ) : (
-              <table className="w-full text-left border-collapse">
-                <thead className="sticky top-0 z-10 bg-[var(--color-bg-sidebar)]">
-                  <tr className="border-b border-[var(--color-border-card)]">
+              <table className="data-table">
+                <thead className="sticky top-0 z-10">
+                  <tr className="border-b border-[var(--color-border-card)]/50">
                     <th className="p-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)] pl-6">Date</th>
                     <th className="p-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Description</th>
                     <th className="p-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Paid By</th>
@@ -324,7 +338,7 @@ export default function Expenses() {
                     <th className="p-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)] pr-6 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[var(--color-border-card)]">
+                <tbody className="divide-y divide-[var(--color-border-card)]/30">
                   {expenses.map((expense) => {
                     const dateStr = new Date(expense.expense_date).toLocaleDateString('en-US', {
                       month: 'short',
@@ -337,7 +351,7 @@ export default function Expenses() {
                       <tr
                         key={expense.id}
                         onClick={() => handleExpenseClick(expense.id)}
-                        className="hover:bg-[var(--color-bg-card-hover)]/35 cursor-pointer transition-colors duration-150 group"
+                        style={{ cursor: 'pointer' }}
                       >
                         {/* Date */}
                         <td className="p-4 pl-6 text-sm text-[var(--color-text-muted)]">
@@ -358,11 +372,10 @@ export default function Expenses() {
                             )}
                           </div>
                         </td>
-
-                        {/* Paid By */}
                         <td className="p-4 text-sm text-white">
                           <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full bg-[var(--color-accent)]/10 text-[var(--color-accent)] flex items-center justify-center text-[10px] font-bold uppercase shrink-0">
+                            <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold uppercase shrink-0"
+                              style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(99,102,241,0.05))', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.25)', boxShadow: '0 2px 8px rgba(99,102,241,0.15)' }}>
                               {expense.paid_by_name?.substring(0, 2) || 'User'}
                             </div>
                             <span className="truncate max-w-[100px]">{expense.paid_by_name}</span>
@@ -412,24 +425,44 @@ export default function Expenses() {
 
         {/* Add Expense Modal */}
         {isFormOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto animate-fade-in">
-            <div className="bg-[var(--color-bg-card)] border border-[var(--color-border-card)] w-full max-w-lg rounded-2xl shadow-2xl p-6 my-8 animate-scale-in">
-              <div className="flex items-center justify-between border-b border-[var(--color-border-card)] pb-4 mb-5">
-                <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Receipt className="text-[var(--color-accent)]" size={20} />
-                  <span>Add New Bill</span>
-                </h2>
+          <div className="modal-backdrop animate-fade-in" style={{ overflowY: 'auto' }}>
+            <div
+              className="animate-scale-in w-full max-w-lg my-8 relative overflow-hidden"
+              style={{
+                background: 'rgba(13, 13, 28, 0.95)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: '16px',
+                boxShadow: '0 32px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.03) inset',
+                backdropFilter: 'blur(30px)',
+              }}
+            >
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)' }} />
+              <div className="flex items-center justify-between pb-5 mb-6" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <div>
+                  <h2 className="text-[17px] font-bold text-white flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'rgba(99,102,241,0.15)' }}>
+                      <Receipt size={16} style={{ color: '#818cf8' }} />
+                    </div>
+                    <span>Add New Bill</span>
+                  </h2>
+                </div>
                 <button
                   onClick={() => setIsFormOpen(false)}
-                  className="p-1 hover:bg-zinc-800 text-[var(--color-text-muted)] hover:text-white rounded-lg transition-colors cursor-pointer"
+                  className="p-1.5 rounded-xl cursor-pointer transition-colors"
+                  style={{ color: '#475569' }}
+                  onMouseEnter={e => { e.currentTarget.style.color = 'white'; e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.color = '#475569'; e.currentTarget.style.background = 'transparent'; }}
                 >
                   <X size={18} />
                 </button>
               </div>
 
               {validationError && (
-                <div className="p-3.5 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl mb-4 text-xs flex items-center gap-2">
-                  <AlertTriangle size={15} className="shrink-0" />
+                <div
+                  className="flex items-center gap-2.5 p-3.5 rounded-xl mb-4 text-[12px]"
+                  style={{ background: 'rgba(244,63,94,0.08)', border: '1px solid rgba(244,63,94,0.2)', color: '#f43f5e' }}
+                >
+                  <AlertTriangle size={14} className="shrink-0" />
                   <span>{validationError}</span>
                 </div>
               )}
@@ -556,11 +589,14 @@ export default function Expenses() {
                         key={t}
                         type="button"
                         onClick={() => setSplitType(t)}
-                        className={`py-2 text-xs font-semibold rounded-xl capitalize cursor-pointer border transition-all ${
-                          splitType === t
-                            ? 'bg-[var(--color-accent)]/10 border-[var(--color-accent)] text-[var(--color-accent)] font-bold shadow-[0_0_10px_rgba(0,180,166,0.05)]'
-                            : 'bg-zinc-800/30 border-[var(--color-border-card)] text-[var(--color-text-muted)] hover:text-white'
-                        }`}
+                        className={`py-2 text-[11px] font-semibold rounded-xl capitalize cursor-pointer transition-all border ${splitType === t
+                            ? 'text-[#818cf8] font-bold'
+                            : 'text-[#475569] hover:text-white'
+                          }`}
+                        style={{
+                          background: splitType === t ? 'rgba(99,102,241,0.12)' : 'rgba(255,255,255,0.03)',
+                          borderColor: splitType === t ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.06)',
+                        }}
                       >
                         {t}
                       </button>
@@ -638,14 +674,14 @@ export default function Expenses() {
                   <button
                     type="button"
                     onClick={() => setIsFormOpen(false)}
-                    className="flex-1 py-2.5 border border-[var(--color-border-card)] hover:bg-[var(--color-bg-card-hover)] text-white font-semibold rounded-xl text-sm cursor-pointer transition-all"
+                    className="btn-ghost flex-1 py-3"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="flex-1 py-2.5 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] disabled:bg-[var(--color-accent)]/50 text-white font-semibold rounded-xl text-sm cursor-pointer transition-all shadow-[0_4px_12px_rgba(0,180,166,0.2)] animate-pulse-subtle"
+                    className="btn-primary flex-1 py-3"
                   >
                     {isSubmitting ? 'Logging...' : 'Log Expense'}
                   </button>
@@ -657,139 +693,154 @@ export default function Expenses() {
 
         {/* Expense Detail Drawer */}
         {isDrawerOpen && (
-          <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm animate-fade-in">
-            {/* Click outside target */}
+          <div className="fixed inset-0 z-50 flex justify-end bg-black/70 backdrop-blur-sm animate-fade-in">
             <div className="flex-1" onClick={() => setIsDrawerOpen(false)} />
-            
             {/* Drawer Body */}
-            <div className="w-full max-w-md bg-[var(--color-bg-card)] border-l border-[var(--color-border-card)] h-full shadow-2xl flex flex-col p-6 overflow-y-auto animate-slide-left">
-              {isDetailLoading ? (
-                <div className="flex-1 flex items-center justify-center">
-                  <div className="w-8 h-8 border-2 border-[var(--color-accent)]/20 border-t-[var(--color-accent)] rounded-full animate-spin" />
-                </div>
-              ) : selectedExpense ? (
-                <div className="flex-col h-full flex justify-between">
-                  <div>
-                    {/* Header */}
-                    <div className="flex items-center justify-between border-b border-[var(--color-border-card)] pb-4 mb-5">
-                      <h3 className="text-lg font-bold text-white">Bill Details</h3>
-                      <button
-                        onClick={() => setIsDrawerOpen(false)}
-                        className="p-1 hover:bg-zinc-800 text-[var(--color-text-muted)] hover:text-white rounded-lg transition-colors cursor-pointer"
-                      >
-                        <X size={18} />
-                      </button>
-                    </div>
-
-                    {/* Expense Core Stats */}
-                    <div className="mb-6">
-                      <div className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider font-semibold">Total Amount</div>
-                      <div className="text-3xl font-extrabold text-[var(--color-accent)] font-mono mt-1">
-                        ₹ {Number(selectedExpense.amount_inr).toFixed(2)}
-                      </div>
-                      {selectedExpense.currency !== 'INR' && (
-                        <div className="text-xs text-[var(--color-text-muted)] mt-1.5 font-mono">
-                          Original: {selectedExpense.currency} {Number(selectedExpense.amount_original).toFixed(2)}
-                          <span className="block text-[10px] text-zinc-500 mt-0.5">Exchange Rate: 1 {selectedExpense.currency} = {Number(selectedExpense.exchange_rate).toFixed(4)} INR</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="space-y-4">
-                      {/* Description */}
-                      <div className="grid grid-cols-3 gap-2 py-2.5 border-b border-[var(--color-border-card)]/50">
-                        <span className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">Description</span>
-                        <span className="col-span-2 text-sm text-white font-medium">{selectedExpense.description}</span>
-                      </div>
-
-                      {/* Date */}
-                      <div className="grid grid-cols-3 gap-2 py-2.5 border-b border-[var(--color-border-card)]/50">
-                        <span className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">Date</span>
-                        <span className="col-span-2 text-sm text-white font-medium">
-                          {new Date(selectedExpense.expense_date).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                            timeZone: 'UTC'
-                          })}
-                        </span>
-                      </div>
-
-                      {/* Paid By */}
-                      <div className="grid grid-cols-3 gap-2 py-2.5 border-b border-[var(--color-border-card)]/50">
-                        <span className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">Paid By</span>
-                        <span className="col-span-2 text-sm text-white font-medium flex items-center gap-2">
-                          <div className="w-5 h-5 rounded-full bg-[var(--color-accent)]/15 text-[var(--color-accent)] flex items-center justify-center text-[9px] font-bold uppercase">
-                            {selectedExpense.paid_by_name?.substring(0, 2)}
-                          </div>
-                          <span>{selectedExpense.paid_by_name}</span>
-                        </span>
-                      </div>
-
-                      {/* Split Type */}
-                      <div className="grid grid-cols-3 gap-2 py-2.5 border-b border-[var(--color-border-card)]/50">
-                        <span className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">Split Type</span>
-                        <span className="col-span-2 text-sm text-white font-medium capitalize">{selectedExpense.split_type}</span>
-                      </div>
-
-                      {/* Notes */}
-                      {selectedExpense.notes && (
-                        <div className="py-2.5">
-                          <span className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider block mb-1">Notes</span>
-                          <p className="text-xs text-zinc-300 bg-zinc-800/30 border border-zinc-700/30 rounded-xl p-3 leading-relaxed">
-                            {selectedExpense.notes}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Split Breakdown */}
-                    <div className="mt-6">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-3">Split Breakdown (Rohan's Drilldown)</h4>
-                      <div className="border border-[var(--color-border-card)] rounded-xl divide-y divide-[var(--color-border-card)] overflow-hidden bg-zinc-900/10">
-                        {selectedExpense.splits?.map((split: any) => {
-                          const isPayer = split.user_id === selectedExpense.paid_by_user_id;
-                          return (
-                            <div key={split.id} className="p-3 flex items-center justify-between text-xs">
-                              <div className="flex items-center gap-2 font-medium text-white">
-                                <div className="w-5 h-5 rounded-full bg-zinc-800 flex items-center justify-center font-bold text-[9px] uppercase">
-                                  {split.user_name?.substring(0, 2)}
-                                </div>
-                                <span>{split.user_name}</span>
-                                {isPayer && <span className="text-[9px] text-[var(--color-accent)] bg-[var(--color-accent)]/10 px-1 rounded">Payer</span>}
-                              </div>
-                              <div className="text-right">
-                                <div className="font-semibold text-white font-mono">₹ {Number(split.share_amount_inr).toFixed(2)}</div>
-                                {selectedExpense.split_type !== 'equal' && split.split_value !== null && (
-                                  <div className="text-[10px] text-[var(--color-text-muted)] mt-0.5">
-                                    {selectedExpense.split_type === 'percentage' ? `${Number(split.split_value).toFixed(1)}%` :
-                                     selectedExpense.split_type === 'shares' ? `${Number(split.split_value).toFixed(0)} shares` :
-                                     `exact`}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Actions footer */}
-                  <div className="border-t border-[var(--color-border-card)] pt-4 mt-6 flex gap-3">
+            <div className="w-full max-w-md h-full flex flex-col overflow-y-auto animate-fade-in relative"
+            style={{
+              background: 'rgba(13, 13, 28, 0.98)',
+              borderLeft: '1px solid rgba(255,255,255,0.08)',
+              boxShadow: '-24px 0 80px rgba(0,0,0,0.7)',
+              backdropFilter: 'blur(30px)',
+            }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: '2px', background: 'linear-gradient(180deg, #8b5cf6 0%, #6366f1 100%)' }} />
+            {isDetailLoading ? (
+              <div className="flex-1 flex items-center justify-center p-8">
+                <div className="w-8 h-8 rounded-full border-2 animate-spin"
+                  style={{ borderColor: 'rgba(99,102,241,0.2)', borderTopColor: '#6366f1' }} />
+              </div>
+            ) : selectedExpense ? (
+              <div className="flex-col h-full flex justify-between p-8">
+                <div>
+                  {/* Header */}
+                  <div className="flex items-center justify-between pb-5 mb-6"
+                    style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+                  >
+                    <h3 className="text-[16px] font-bold text-white">Bill Details</h3>
                     <button
-                      onClick={(e) => handleDeleteExpense(selectedExpense.id, e)}
-                      className="w-full flex items-center justify-center gap-2 py-2.5 border border-red-500/30 hover:bg-red-500/5 text-red-400 font-semibold rounded-xl text-sm transition-colors cursor-pointer"
+                      onClick={() => setIsDrawerOpen(false)}
+                      className="p-1.5 rounded-xl cursor-pointer transition-colors"
+                      style={{ color: '#475569' }}
+                      onMouseEnter={e => { e.currentTarget.style.color = 'white'; e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.color = '#475569'; e.currentTarget.style.background = 'transparent'; }}
                     >
-                      <Trash2 size={16} />
-                      <span>Delete Expense</span>
+                      <X size={18} />
                     </button>
                   </div>
+
+                  {/* Expense Core Stats */}
+                  <div className="mb-6">
+                    <div className="section-label mb-1">Total Amount</div>
+                    <div
+                      className="mono mt-1"
+                      style={{ fontSize: '2rem', fontWeight: 600, color: '#818cf8', letterSpacing: '-0.04em', lineHeight: 1 }}
+                    >
+                      ₹{Number(selectedExpense.amount_inr).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                    </div>
+                    {selectedExpense.currency !== 'INR' && (
+                      <div className="text-xs text-[var(--color-text-muted)] mt-1.5 font-mono">
+                        Original: {selectedExpense.currency} {Number(selectedExpense.amount_original).toFixed(2)}
+                        <span className="block text-[10px] text-zinc-500 mt-0.5">Exchange Rate: 1 {selectedExpense.currency} = {Number(selectedExpense.exchange_rate).toFixed(4)} INR</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-4">
+                    {/* Description */}
+                    <div className="grid grid-cols-3 gap-2 py-2.5 border-b border-[var(--color-border-card)]/50">
+                      <span className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">Description</span>
+                      <span className="col-span-2 text-sm text-white font-medium">{selectedExpense.description}</span>
+                    </div>
+
+                    {/* Date */}
+                    <div className="grid grid-cols-3 gap-2 py-2.5 border-b border-[var(--color-border-card)]/50">
+                      <span className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">Date</span>
+                      <span className="col-span-2 text-sm text-white font-medium">
+                        {new Date(selectedExpense.expense_date).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          timeZone: 'UTC'
+                        })}
+                      </span>
+                    </div>
+
+                    {/* Paid By */}
+                    <div className="grid grid-cols-3 gap-2 py-2.5 border-b border-[var(--color-border-card)]/50">
+                      <span className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">Paid By</span>
+                      <td className="col-span-2 text-sm text-white font-medium flex items-center gap-2">
+                        <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold uppercase shrink-0"
+                          style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(99,102,241,0.05))', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.25)', boxShadow: '0 2px 8px rgba(99,102,241,0.15)' }}>
+                          {selectedExpense.paid_by_name?.substring(0, 2)}
+                        </div>
+                        <span>{selectedExpense.paid_by_name}</span>
+                      </td>
+                    </div>
+
+                    {/* Split Type */}
+                    <div className="grid grid-cols-3 gap-2 py-2.5 border-b border-[var(--color-border-card)]/50">
+                      <span className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">Split Type</span>
+                      <span className="col-span-2 text-sm text-white font-medium capitalize">{selectedExpense.split_type}</span>
+                    </div>
+
+                    {/* Notes */}
+                    {selectedExpense.notes && (
+                      <div className="py-2.5">
+                        <span className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider block mb-1">Notes</span>
+                        <p className="text-xs text-zinc-300 bg-zinc-800/30 border border-zinc-700/30 rounded-xl p-3 leading-relaxed">
+                          {selectedExpense.notes}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Split Breakdown */}
+                  <div className="mt-6">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-3">Split Breakdown (Rohan's Drilldown)</h4>
+                    <div className="border border-[var(--color-border-card)] rounded-xl divide-y divide-[var(--color-border-card)] overflow-hidden bg-zinc-900/10">
+                      {selectedExpense.splits?.map((split: any) => {
+                        const isPayer = split.user_id === selectedExpense.paid_by_user_id;
+                        return (
+                          <div key={split.id} className="p-3 flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-2 font-medium text-white">
+                              <div className="w-5 h-5 rounded-full bg-zinc-800 flex items-center justify-center font-bold text-[9px] uppercase">
+                                {split.user_name?.substring(0, 2)}
+                              </div>
+                              <span>{split.user_name}</span>
+                              {isPayer && <span className="text-[9px] text-[var(--color-accent)] bg-[var(--color-accent)]/10 px-1 rounded">Payer</span>}
+                            </div>
+                            <div className="text-right">
+                              <div className="font-semibold text-white font-mono">₹ {Number(split.share_amount_inr).toFixed(2)}</div>
+                              {selectedExpense.split_type !== 'equal' && split.split_value !== null && (
+                                <div className="text-[10px] text-[var(--color-text-muted)] mt-0.5">
+                                  {selectedExpense.split_type === 'percentage' ? `${Number(split.split_value).toFixed(1)}%` :
+                                    selectedExpense.split_type === 'shares' ? `${Number(split.split_value).toFixed(0)} shares` :
+                                      `exact`}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
-              ) : (
-                <div className="flex-1 flex items-center justify-center text-zinc-500 text-sm">Failed to load details.</div>
-              )}
-            </div>
+
+                {/* Actions footer */}
+                <div className="pt-5 mt-6" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                  <button
+                    onClick={(e) => handleDeleteExpense(selectedExpense.id, e)}
+                    className="btn-danger-ghost w-full py-2.5"
+                  >
+                    <Trash2 size={15} />
+                    <span>Delete Expense</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 flex items-center justify-center text-zinc-500 text-sm">Failed to load details.</div>
+            )}
+          </div>
           </div>
         )}
       </div>

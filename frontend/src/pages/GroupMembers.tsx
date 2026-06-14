@@ -88,156 +88,175 @@ export default function GroupMembers() {
 
   return (
     <MainLayout>
-      <div className="p-8 max-w-5xl mx-auto w-full animate-fade-in">
+      <div className="animate-fade-in flex-1 flex flex-col min-h-0" style={{ padding: '28px 32px', maxWidth: '1440px', margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-8 shrink-0">
           <div>
-            <h1 className="text-3xl font-bold text-white tracking-tight">Group Members</h1>
-            <p className="text-sm text-[var(--color-text-muted)] mt-1">
-              Manage who is in <span className="text-[var(--color-accent)] font-semibold">{currentGroup.name}</span> and their membership periods.
+            <div className="flex items-center gap-2.5 mb-2.5">
+              <span className="section-label">Members</span>
+              <div style={{ width: '3px', height: '3px', borderRadius: '50%', background: '#334155' }} />
+              <span className="section-label" style={{ color: '#6366f1' }}>{currentGroup.name}</span>
+            </div>
+            <h1 className="page-title">Group Members</h1>
+            <p className="text-[13px] mt-1" style={{ color: '#475569' }}>
+              Manage who is in <span className="font-semibold text-white">{currentGroup.name}</span> and their membership periods.
             </p>
           </div>
-          <button
-            onClick={() => setIsAddOpen(true)}
-            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-semibold rounded-xl text-sm transition-all duration-200 cursor-pointer shadow-[0_4px_12px_rgba(0,180,166,0.2)] hover:-translate-y-0.5"
-          >
-            <UserPlus size={16} />
+          <button onClick={() => setIsAddOpen(true)} className="btn-primary py-2.5 px-5">
+            <UserPlus size={15} />
             <span>Add Member</span>
           </button>
         </div>
 
         {error && (
-          <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl mb-6 text-sm flex items-center gap-2">
-            <span>⚠️</span>
-            <span>{error}</span>
+          <div
+            className="flex items-center gap-3 p-4 rounded-2xl mb-6 text-[13px]"
+            style={{ background: 'rgba(244,63,94,0.08)', border: '1px solid rgba(244,63,94,0.2)', color: '#f43f5e' }}
+          >
+            ⚠️ {error}
           </div>
         )}
 
         {/* Members Table */}
-        <div className="bg-[var(--color-bg-card)] border border-[var(--color-border-card)] rounded-2xl overflow-hidden shadow-xl">
+        <div className="animate-fade-in hover-lift" style={{
+          background: 'rgba(13,13,28,0.9)', borderRadius: '14px',
+          border: '1px solid rgba(255,255,255,0.07)', position: 'relative', overflow: 'hidden',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.03) inset',
+          display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0
+        }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1.5px', background: 'linear-gradient(90deg, #6366f1 0%, #6366f160 40%, transparent 100%)', zIndex: 20 }} />
           {isLoading ? (
             <div className="p-12 flex justify-center">
-              <div className="w-8 h-8 border-2 border-[var(--color-accent)]/20 border-t-[var(--color-accent)] rounded-full animate-spin" />
+              <div className="w-8 h-8 rounded-full border-2 animate-spin" style={{ borderColor: 'rgba(99,102,241,0.2)', borderTopColor: '#6366f1' }} />
             </div>
           ) : (
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-[var(--color-border-card)] bg-[var(--color-bg-sidebar)]/50">
-                  <th className="p-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)] pl-6">Member</th>
-                  <th className="p-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Join Date</th>
-                  <th className="p-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Departure Date</th>
-                  <th className="p-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Status</th>
-                  <th className="p-4 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)] pr-6 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--color-border-card)]">
-                {members.map((member) => {
-                  const isLeft = member.left_at !== null;
-                  const joinedDateStr = new Date(member.joined_at).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                    timeZone: 'UTC'
-                  });
-                  const leftDateStr = isLeft
-                    ? new Date(member.left_at).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                        timeZone: 'UTC'
-                      })
-                    : 'Present';
+            <div className="overflow-y-auto flex-1">
+              <table className="data-table">
+                <thead className="sticky top-0 z-10">
+                  <tr>
+                    <th className="pl-6">Member</th>
+                    <th>Join Date</th>
+                    <th>Departure Date</th>
+                    <th>Status</th>
+                    <th className="pr-6 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {members.map((member) => {
+                    const isLeft = member.left_at !== null;
+                    const joinedDateStr = new Date(member.joined_at).toLocaleDateString('en-US', {
+                      year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC'
+                    });
+                    const leftDateStr = isLeft
+                      ? new Date(member.left_at).toLocaleDateString('en-US', {
+                          year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC'
+                        })
+                      : 'Present';
 
-                  return (
-                    <tr key={member.id} className="hover:bg-[var(--color-bg-card-hover)]/35 transition-colors duration-150">
-                      {/* Name / Email */}
-                      <td className="p-4 pl-6">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm border uppercase shadow-sm ${
-                            isLeft 
-                              ? 'bg-zinc-800/50 text-zinc-500 border-zinc-700/30' 
-                              : 'bg-[var(--color-accent)]/10 text-[var(--color-accent)] border-[var(--color-accent)]/20'
-                          }`}>
-                            {member.user_name?.substring(0, 2)}
-                          </div>
-                          <div>
-                            <div className={`text-sm font-semibold ${isLeft ? 'text-zinc-500 line-through' : 'text-white'}`}>
-                              {member.user_name}
+                    return (
+                      <tr key={member.id}>
+                        {/* Name / Email */}
+                        <td className="pl-6">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-[12px] uppercase shrink-0"
+                              style={{
+                                background: isLeft ? 'rgba(255,255,255,0.03)' : 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(99,102,241,0.05))',
+                                border: isLeft ? 'none' : '1px solid rgba(99,102,241,0.25)',
+                                color: isLeft ? '#64748b' : '#a5b4fc',
+                              }}
+                            >
+                              {member.user_name?.substring(0, 2)}
                             </div>
-                            <div className="text-xs text-[var(--color-text-muted)]">{member.user_email}</div>
+                            <div>
+                              <div className={`text-[13px] font-semibold ${isLeft ? 'line-through text-[#64748b]' : 'text-white'}`}>
+                                {member.user_name}
+                              </div>
+                              <div className="text-[11px]" style={{ color: '#475569' }}>{member.user_email}</div>
+                            </div>
                           </div>
-                        </div>
-                      </td>
+                        </td>
 
-                      {/* Join Date */}
-                      <td className="p-4">
-                        <div className="flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
-                          <Calendar size={14} className="text-[var(--color-accent)]/70" />
-                          <span>{joinedDateStr}</span>
-                        </div>
-                      </td>
+                        {/* Join Date */}
+                        <td>
+                          <div className="flex items-center gap-2 text-[12px] mono" style={{ color: '#64748b' }}>
+                            <Calendar size={13} style={{ color: '#6366f1' }} />
+                            <span>{joinedDateStr}</span>
+                          </div>
+                        </td>
 
-                      {/* Departure Date */}
-                      <td className="p-4">
-                        <div className="flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
-                          <Calendar size={14} className="text-zinc-600" />
-                          <span className={isLeft ? 'text-orange-400/80 font-medium' : ''}>{leftDateStr}</span>
-                        </div>
-                      </td>
+                        {/* Departure Date */}
+                        <td>
+                          <div className="flex items-center gap-2 text-[12px] mono" style={{ color: '#64748b' }}>
+                            <Calendar size={13} style={{ color: '#475569' }} />
+                            <span className={isLeft ? 'text-[#fb923c] font-medium' : ''}>{leftDateStr}</span>
+                          </div>
+                        </td>
 
-                      {/* Status Badge */}
-                      <td className="p-4">
-                        {isLeft ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-zinc-500/10 text-zinc-400 border border-zinc-500/20">
-                            Departed
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[var(--color-accent)]/10 text-[var(--color-accent)] border border-[var(--color-accent)]/20 shadow-[0_0_10px_rgba(0,180,166,0.05)]">
-                            Active
-                          </span>
-                        )}
-                      </td>
+                        {/* Status Badge */}
+                        <td>
+                          {isLeft ? (
+                            <span className="badge" style={{ background: 'rgba(255,255,255,0.05)', color: '#94a3b8' }}>
+                              Departed
+                            </span>
+                          ) : (
+                            <span className="badge badge-emerald">
+                              Active
+                            </span>
+                          )}
+                        </td>
 
-                      {/* Action */}
-                      <td className="p-4 pr-6 text-right">
-                        {!isLeft && (
-                          <button
-                            onClick={() => {
-                              setDepartingMember(member);
-                              setDepartureDate(new Date().toISOString().split('T')[0]);
-                            }}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-zinc-700 hover:border-orange-500/30 hover:bg-orange-500/5 text-zinc-400 hover:text-orange-400 rounded-lg text-xs font-semibold cursor-pointer transition-all duration-200"
-                          >
-                            <LogOut size={13} />
-                            <span>Set Departure</span>
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        {/* Action */}
+                        <td className="pr-6 text-right">
+                          {!isLeft && (
+                            <button
+                              onClick={() => {
+                                setDepartingMember(member);
+                                setDepartureDate(new Date().toISOString().split('T')[0]);
+                              }}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold cursor-pointer transition-all"
+                              style={{ border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8' }}
+                              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(251,146,60,0.4)'; e.currentTarget.style.color = '#fb923c'; e.currentTarget.style.background = 'rgba(251,146,60,0.05)'; }}
+                              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.background = 'transparent'; }}
+                            >
+                              <LogOut size={13} />
+                              <span>Set Departure</span>
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
 
         {/* Add Member Modal */}
         {isAddOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-            <div className="bg-[var(--color-bg-card)] border border-[var(--color-border-card)] w-full max-w-md rounded-2xl shadow-2xl p-6 animate-scale-in">
-              <h2 className="text-xl font-bold text-white mb-1">Add Group Member</h2>
-              <p className="text-xs text-[var(--color-text-muted)] mb-5">
+          <div className="modal-backdrop">
+            <div className="w-full max-w-md p-8 animate-scale-in relative overflow-hidden"
+              style={{
+                background: 'rgba(13, 13, 28, 0.95)', border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: '16px', boxShadow: '0 32px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.03) inset',
+                backdropFilter: 'blur(30px)'
+              }}
+            >
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)' }} />
+              <h2 className="text-[18px] font-bold text-white mb-1">Add Group Member</h2>
+              <p className="text-[13px] mb-5" style={{ color: '#475569' }}>
                 Invite a registered user to join this group.
               </p>
               
               <form onSubmit={handleAddMember} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)] mb-1.5 pl-1">
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1.5 pl-1" style={{ color: '#64748b' }}>
                     User Email
                   </label>
                   <div className="relative">
-                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[var(--color-text-muted)]">
-                      <Mail size={16} />
+                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center" style={{ color: '#64748b' }}>
+                      <Mail size={15} />
                     </span>
                     <input
                       type="email"
@@ -245,42 +264,34 @@ export default function GroupMembers() {
                       value={addEmail}
                       onChange={(e) => setAddEmail(e.target.value)}
                       placeholder="friend@example.com"
-                      className="w-full pl-10 pr-4 py-2.5 bg-[var(--color-bg-sidebar)] border border-[var(--color-border-card)] rounded-xl text-sm text-white placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)] transition-all duration-200"
+                      className="input-field pl-10"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)] mb-1.5 pl-1">
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1.5 pl-1" style={{ color: '#64748b' }}>
                     Join Date
                   </label>
                   <div className="relative">
-                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[var(--color-text-muted)]">
-                      <Calendar size={16} />
+                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center" style={{ color: '#64748b' }}>
+                      <Calendar size={15} />
                     </span>
                     <input
                       type="date"
                       required
                       value={addJoinDate}
                       onChange={(e) => setAddJoinDate(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 bg-[var(--color-bg-sidebar)] border border-[var(--color-border-card)] rounded-xl text-sm text-white focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)] transition-all duration-200"
+                      className="input-field pl-10"
                     />
                   </div>
                 </div>
 
                 <div className="flex gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsAddOpen(false)}
-                    className="flex-1 py-2.5 border border-[var(--color-border-card)] hover:bg-[var(--color-bg-card-hover)] text-white font-semibold rounded-xl text-sm cursor-pointer transition-all duration-200"
-                  >
+                  <button type="button" onClick={() => setIsAddOpen(false)} className="btn-ghost flex-1 py-2.5">
                     Cancel
                   </button>
-                  <button
-                    type="submit"
-                    disabled={isSubmittingAdd}
-                    className="flex-1 py-2.5 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] disabled:bg-[var(--color-accent)]/50 text-white font-semibold rounded-xl text-sm cursor-pointer transition-all duration-200 shadow-[0_4px_12px_rgba(0,180,166,0.2)]"
-                  >
+                  <button type="submit" disabled={isSubmittingAdd} className="btn-primary flex-1 py-2.5">
                     {isSubmittingAdd ? 'Adding...' : 'Add Member'}
                   </button>
                 </div>
@@ -291,21 +302,28 @@ export default function GroupMembers() {
 
         {/* Departure Modal */}
         {departingMember && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-            <div className="bg-[var(--color-bg-card)] border border-[var(--color-border-card)] w-full max-w-md rounded-2xl shadow-2xl p-6 animate-scale-in">
-              <h2 className="text-xl font-bold text-white mb-1">Set Departure Date</h2>
-              <p className="text-xs text-[var(--color-text-muted)] mb-5">
-                Record the date <span className="text-[var(--color-accent)] font-semibold">{departingMember.user_name}</span> moved out or left the group.
+          <div className="modal-backdrop">
+            <div className="w-full max-w-md p-8 animate-scale-in relative overflow-hidden"
+              style={{
+                background: 'rgba(13, 13, 28, 0.95)', border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: '16px', boxShadow: '0 32px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.03) inset',
+                backdropFilter: 'blur(30px)'
+              }}
+            >
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, #f97316 0%, #fb923c 100%)' }} />
+              <h2 className="text-[18px] font-bold text-white mb-1">Set Departure Date</h2>
+              <p className="text-[13px] mb-5" style={{ color: '#475569' }}>
+                Record the date <span className="font-semibold text-white">{departingMember.user_name}</span> moved out or left the group.
               </p>
               
               <form onSubmit={handleSetDeparture} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)] mb-1.5 pl-1">
+                  <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1.5 pl-1" style={{ color: '#64748b' }}>
                     Departure Date
                   </label>
                   <div className="relative">
-                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[var(--color-text-muted)]">
-                      <Calendar size={16} />
+                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center" style={{ color: '#64748b' }}>
+                      <Calendar size={15} />
                     </span>
                     <input
                       type="date"
@@ -313,23 +331,26 @@ export default function GroupMembers() {
                       value={departureDate}
                       min={departingMember.joined_at ? departingMember.joined_at.split('T')[0] : undefined}
                       onChange={(e) => setDepartureDate(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 bg-[var(--color-bg-sidebar)] border border-[var(--color-border-card)] rounded-xl text-sm text-white focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)] transition-all duration-200"
+                      className="input-field pl-10"
                     />
                   </div>
                 </div>
 
                 <div className="flex gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setDepartingMember(null)}
-                    className="flex-1 py-2.5 border border-[var(--color-border-card)] hover:bg-[var(--color-bg-card-hover)] text-white font-semibold rounded-xl text-sm cursor-pointer transition-all duration-200"
-                  >
+                  <button type="button" onClick={() => setDepartingMember(null)} className="btn-ghost flex-1 py-2.5">
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={isSubmittingDepart}
-                    className="flex-1 py-2.5 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-500/50 text-white font-semibold rounded-xl text-sm cursor-pointer transition-all duration-200 shadow-[0_4px_12px_rgba(249,115,22,0.2)]"
+                    className="flex-1 py-2.5 rounded-xl text-[13px] font-semibold transition-all cursor-pointer shadow-lg"
+                    style={{
+                      background: isSubmittingDepart ? 'rgba(249,115,22,0.5)' : '#f97316',
+                      color: 'white',
+                      boxShadow: '0 4px 12px rgba(249,115,22,0.15)'
+                    }}
+                    onMouseEnter={e => { if (!isSubmittingDepart) e.currentTarget.style.background = '#ea580c'; }}
+                    onMouseLeave={e => { if (!isSubmittingDepart) e.currentTarget.style.background = '#f97316'; }}
                   >
                     {isSubmittingDepart ? 'Saving...' : 'Set Departed'}
                   </button>
