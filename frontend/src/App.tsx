@@ -1,9 +1,15 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { GroupProvider } from './context/GroupContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Onboarding from './pages/Onboarding';
 import Dashboard from './pages/Dashboard';
+import GroupMembers from './pages/GroupMembers';
+import Expenses from './pages/Expenses';
+import Balances from './pages/Balances';
+import Settlements from './pages/Settlements';
+import Import from './pages/Import';
 
 /**
  * Protected route wrapper — redirects to login if not authenticated.
@@ -59,6 +65,11 @@ function AppRoutes() {
       {/* Protected routes */}
       <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/group-members" element={<ProtectedRoute><GroupMembers /></ProtectedRoute>} />
+      <Route path="/expenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
+      <Route path="/balances" element={<ProtectedRoute><Balances /></ProtectedRoute>} />
+      <Route path="/settlements" element={<ProtectedRoute><Settlements /></ProtectedRoute>} />
+      <Route path="/import" element={<ProtectedRoute><Import /></ProtectedRoute>} />
 
       {/* Default redirect */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -71,7 +82,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppRoutes />
+        <GroupProvider>
+          <AppRoutes />
+        </GroupProvider>
       </AuthProvider>
     </BrowserRouter>
   );
