@@ -43,7 +43,7 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
       return;
     }
     console.error('Register error:', error);
-    res.status(500).json({ error: 'Registration failed' });
+    res.status(500).json({ error: 'Registration failed', detail: error.message });
   }
 });
 
