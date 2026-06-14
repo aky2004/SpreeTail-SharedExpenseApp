@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 import { Plus, LogIn, Wallet, Users } from 'lucide-react';
-import api from '../../api/client';
+import api from '../api/client';
 
 /**
  * Onboarding page shown after registration.
