@@ -147,6 +147,7 @@ export interface CreateExpenseRequest {
   split_with: number[];  // user IDs
   split_values?: number[];  // parallel array: percentages, exact amounts, or shares
   notes?: string;
+  paid_by_user_id?: number;
 }
 
 export interface RecordSettlementRequest {
